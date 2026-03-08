@@ -1,8 +1,21 @@
+import { useOKRState } from "./hooks/useOKRState"
+import AppShell from "./components/layout/AppShell"
+
 export default function App() {
+  const { state, setStep, reset } = useOKRState()
+
   return (
-    <div className="min-h-screen bg-bg font-body text-text">
-      <h1 className="text-3xl font-display p-8">OKR Builder</h1>
-      <p className="px-8 text-muted">Scaffold working.</p>
-    </div>
+    <AppShell
+      step={state.step}
+      setStep={setStep}
+      ctx={state.ctx}
+      selected={state.selected}
+      onReset={reset}
+    >
+      <h1 className="font-display text-3xl text-text">
+        Step {state.step + 1}
+      </h1>
+      <p className="text-muted mt-2">Content placeholder</p>
+    </AppShell>
   )
 }
