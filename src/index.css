@@ -1,0 +1,25 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  --color-chrome: #1A1A2E;
+  --color-accent: #4A235A;
+  --color-accent-light: #EDE0F5;
+  --color-sales: #1B4F8A;
+  --color-sales-light: #D6E4F7;
+  --color-sales-lighter: #EBF4FF;
+  --color-mkt: #C0392B;
+  --color-mkt-light: #FDECEA;
+  --color-mkt-lighter: #FEF5F5;
+  --color-csm: #1A7A4A;
+  --color-csm-light: #D4EDDA;
+  --color-csm-lighter: #EEF9F2;
+  --color-surface: #FFFFFF;
+  --color-bg: #F8F9FA;
+  --color-border: #E8E8E8;
+  --color-text: #1A1A2E;
+  --color-muted: #888888;
+  --font-display: 'DM Serif Display', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
