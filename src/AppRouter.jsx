@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import AuthCallback from "./components/auth/AuthCallback"
 import AuthGuard from "./components/auth/AuthGuard"
+import AdminPanel from "./components/admin/AdminPanel"
 import App from "./App"
 
 export default function AppRouter() {
@@ -12,6 +13,11 @@ export default function AppRouter() {
     return () => window.removeEventListener("popstate", onPop)
   }, [])
 
+  const navigate = useCallback((to) => {
+    window.history.pushState({}, "", to)
+    setPath(to)
+  }, [])
+
   const handleAuthComplete = useCallback(() => {
     window.history.replaceState({}, "", "/")
     setPath("/")
@@ -21,9 +27,17 @@ export default function AppRouter() {
     return <AuthCallback onComplete={handleAuthComplete} />
   }
 
+  if (path === "/admin") {
+    return (
+      <AuthGuard>
+        <AdminPanel onBack={() => navigate("/")} />
+      </AuthGuard>
+    )
+  }
+
   return (
     <AuthGuard>
-      <App />
+      <App onNavigate={navigate} />
     </AuthGuard>
   )
 }

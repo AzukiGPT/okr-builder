@@ -1,8 +1,9 @@
 import { useAuth } from "../../contexts/AuthContext"
 import LoginPage from "./LoginPage"
+import PendingApprovalPage from "./PendingApprovalPage"
 
 export default function AuthGuard({ children }) {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
 
   if (loading) {
     return (
@@ -13,6 +14,8 @@ export default function AuthGuard({ children }) {
   }
 
   if (!user) return <LoginPage />
+
+  if (profile && !profile.is_approved) return <PendingApprovalPage />
 
   return children
 }

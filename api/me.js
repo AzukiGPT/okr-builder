@@ -21,7 +21,7 @@ export default async function handler(req) {
   if (req.method === "GET") {
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, full_name, company, plan, created_at")
+      .select("id, email, full_name, company, plan, role, is_approved, created_at")
       .eq("id", user.id)
       .single()
 
@@ -39,7 +39,7 @@ export default async function handler(req) {
       .from("profiles")
       .update(updates)
       .eq("id", user.id)
-      .select("id, email, full_name, company, plan")
+      .select("id, email, full_name, company, plan, role, is_approved")
       .single()
 
     if (error) return json({ error: error.message }, 500, req)

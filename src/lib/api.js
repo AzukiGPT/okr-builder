@@ -24,4 +24,6 @@ export const api = {
   deleteSet: (id) => apiFetch(`/okr-sets?id=${id}`, { method: "DELETE" }),
   getProfile: () => apiFetch("/me"),
   updateProfile: (payload) => apiFetch("/me", { method: "PATCH", body: JSON.stringify(payload) }),
+  adminListUsers: (filter = "pending") => apiFetch(`/admin/users?filter=${filter}`),
+  adminUpdateUser: (id, payload) => apiFetch(`/admin/users?id=${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
 }

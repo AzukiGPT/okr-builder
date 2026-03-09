@@ -14,7 +14,7 @@ import FunnelStep from "./components/steps/FunnelStep"
 import OKRSystemStep from "./components/steps/OKRSystemStep"
 import SetSelector from "./components/auth/SetSelector"
 
-export default function App() {
+export default function App({ onNavigate }) {
   const {
     state, dispatch, setStep, setCtx, toggleObjective,
     setFunnel, setCustomTarget, syncCtxToFunnel, reset
@@ -88,6 +88,7 @@ export default function App() {
       shared={shared}
       saveStatus={saveStatus}
       onBackToSets={handleBackToSets}
+      onNavigate={onNavigate}
     >
       {state.step === 0 && (
         <ContextStep

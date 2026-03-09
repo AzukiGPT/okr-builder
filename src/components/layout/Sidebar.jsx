@@ -1,7 +1,7 @@
 import { useAuth } from "../../contexts/AuthContext"
 
-function UserFooter({ saveStatus, onBackToSets }) {
-  const { user, signOut } = useAuth()
+function UserFooter({ saveStatus, onBackToSets, onNavigate }) {
+  const { user, profile, signOut } = useAuth()
   if (!user) return null
 
   const statusLabel = {
@@ -32,6 +32,15 @@ function UserFooter({ saveStatus, onBackToSets }) {
         >
           My sets
         </button>
+        {profile?.role === "admin" && onNavigate && (
+          <button
+            type="button"
+            onClick={() => onNavigate("/admin")}
+            className="text-[11px] text-violet-400 hover:text-violet-300 transition-colors cursor-pointer"
+          >
+            Admin
+          </button>
+        )}
         <button
           type="button"
           onClick={signOut}
@@ -144,6 +153,7 @@ export default function Sidebar({
   shared,
   saveStatus,
   onBackToSets,
+  onNavigate,
   mobile,
 }) {
   if (mobile) {
@@ -217,7 +227,7 @@ export default function Sidebar({
         </div>
       )}
 
-      <UserFooter saveStatus={saveStatus} onBackToSets={onBackToSets} />
+      <UserFooter saveStatus={saveStatus} onBackToSets={onBackToSets} onNavigate={onNavigate} />
     </nav>
   )
 }
