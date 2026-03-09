@@ -49,9 +49,9 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
               <p className="font-mono text-2xl font-extrabold text-foreground mt-1">
                 {count} / 5
               </p>
-              {count === 3 && (
+              {count >= 5 && (
                 <div className="mt-2">
-                  <Tag variant="warning">Max 3 selected</Tag>
+                  <Tag variant="warning">Max 5 selected</Tag>
                 </div>
               )}
             </div>
