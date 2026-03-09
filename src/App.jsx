@@ -1,6 +1,7 @@
 import { useOKRState } from "./hooks/useOKRState"
 import { useFunnelCalc } from "./hooks/useFunnelCalc"
 import { generatePDF } from "./utils/exportPDF"
+import { useShareableURL } from "./hooks/useShareableURL"
 import AppShell from "./components/layout/AppShell"
 import ContextStep from "./components/steps/ContextStep"
 import SelectionStep from "./components/steps/SelectionStep"
@@ -9,10 +10,11 @@ import OKRSystemStep from "./components/steps/OKRSystemStep"
 
 export default function App() {
   const {
-    state, setStep, setCtx, toggleObjective,
+    state, dispatch, setStep, setCtx, toggleObjective,
     setFunnel, setCustomTarget, reset
   } = useOKRState()
   const calc = useFunnelCalc(state.funnel)
+  const { share, shared } = useShareableURL(state, dispatch)
 
   return (
     <AppShell
@@ -21,6 +23,8 @@ export default function App() {
       ctx={state.ctx}
       selected={state.selected}
       onReset={() => { reset(); setStep(0) }}
+      onShare={share}
+      shared={shared}
     >
       {state.step === 0 && (
         <ContextStep
@@ -63,8 +67,8 @@ export default function App() {
             calc,
             customTargets: state.customTargets,
           })}
-          onShare={() => {}}
-          shared={false}
+          onShare={share}
+          shared={shared}
         />
       )}
     </AppShell>
