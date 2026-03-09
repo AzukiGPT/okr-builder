@@ -22,6 +22,13 @@ export const api = {
   createSet: (payload) => apiFetch("/okr-sets", { method: "POST", body: JSON.stringify(payload) }),
   updateSet: (id, payload) => apiFetch(`/okr-sets?id=${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteSet: (id) => apiFetch(`/okr-sets?id=${id}`, { method: "DELETE" }),
+
+  listActions: (setId) => apiFetch(`/actions?set_id=${setId}`),
+  getAction: (setId, id) => apiFetch(`/actions?set_id=${setId}&id=${id}`),
+  createAction: (payload) => apiFetch("/actions", { method: "POST", body: JSON.stringify(payload) }),
+  updateAction: (id, payload) => apiFetch(`/actions?id=${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteAction: (id) => apiFetch(`/actions?id=${id}`, { method: "DELETE" }),
+
   getProfile: () => apiFetch("/me"),
   updateProfile: (payload) => apiFetch("/me", { method: "PATCH", body: JSON.stringify(payload) }),
   adminListUsers: (filter = "pending") => apiFetch(`/admin/users?filter=${filter}`),
