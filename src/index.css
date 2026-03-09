@@ -137,3 +137,26 @@
       linear-gradient(135deg, var(--gb-from, oklch(0.5 0.2 280)), var(--gb-to, oklch(0.35 0.15 250))) border-box;
   }
 }
+
+/* Gantt overrides */
+.gantt-container .gantt {
+  background: transparent;
+}
+.gantt-container .grid-header {
+  fill: hsl(var(--muted));
+}
+.gantt-container .grid-row {
+  fill: transparent;
+}
+.gantt-container .grid-row:nth-child(even) {
+  fill: hsl(var(--muted) / 0.3);
+}
+.gantt-container .lower-text, .gantt-container .upper-text {
+  font-size: 11px;
+  fill: hsl(var(--muted-foreground));
+}
+.gantt-container .bar-label {
+  font-size: 11px;
+  fill: white;
+  font-weight: 600;
+}
