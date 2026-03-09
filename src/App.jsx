@@ -140,6 +140,7 @@ export default function App({ onNavigate }) {
           setCustomTarget={setCustomTarget}
           onBack={() => setStep(2)}
           onReset={() => { reset(); setStep(0) }}
+          onBackToSets={handleBackToSets}
           onExportPDF={() => generatePDF({
             ctx: state.ctx,
             selected: state.selected,

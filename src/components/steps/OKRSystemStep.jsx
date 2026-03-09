@@ -37,6 +37,7 @@ export default function OKRSystemStep({
   setCustomTarget,
   onBack,
   onReset,
+  onBackToSets,
   onExportPDF,
   onExportExcel,
   onCopyNotion,
@@ -288,6 +289,14 @@ export default function OKRSystemStep({
           </button>
         </div>
       </div>
+
+      {onBackToSets && (
+        <div className="flex justify-center pt-2 pb-4">
+          <Button onClick={onBackToSets} size="lg" className="px-8">
+            Done — back to my sets
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
