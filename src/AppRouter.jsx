@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react"
-import AuthCallback from "./components/auth/AuthCallback"
 import AuthGuard from "./components/auth/AuthGuard"
 import AdminPanel from "./components/admin/AdminPanel"
 import App from "./App"
@@ -17,15 +16,6 @@ export default function AppRouter() {
     window.history.pushState({}, "", to)
     setPath(to)
   }, [])
-
-  const handleAuthComplete = useCallback(() => {
-    window.history.replaceState({}, "", "/")
-    setPath("/")
-  }, [])
-
-  if (path === "/auth/callback") {
-    return <AuthCallback onComplete={handleAuthComplete} />
-  }
 
   if (path === "/admin") {
     return (

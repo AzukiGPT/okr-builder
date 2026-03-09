@@ -39,12 +39,13 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [fetchProfile])
 
-  const signIn = useCallback(async (email) => {
-    const redirectTo = `${window.location.origin}/auth/callback`
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo },
-    })
+  const signIn = useCallback(async (email, password) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
+  }, [])
+
+  const signUp = useCallback(async (email, password) => {
+    const { error } = await supabase.auth.signUp({ email, password })
     if (error) throw error
   }, [])
 
@@ -54,7 +55,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, fetchProfile }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, fetchProfile }}>
       {children}
     </AuthContext.Provider>
   )
