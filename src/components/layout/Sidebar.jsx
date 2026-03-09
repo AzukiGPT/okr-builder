@@ -1,3 +1,49 @@
+import { useAuth } from "../../contexts/AuthContext"
+
+function UserFooter({ saveStatus, onBackToSets }) {
+  const { user, signOut } = useAuth()
+  if (!user) return null
+
+  const statusLabel = {
+    idle: "",
+    saving: "Saving...",
+    saved: "\u2713 Saved",
+    error: "\u26a0 Save failed",
+  }[saveStatus] || ""
+
+  const statusColor = {
+    saving: "text-amber-500",
+    saved: "text-emerald-500",
+    error: "text-red-500",
+  }[saveStatus] || "text-transparent"
+
+  return (
+    <div className="px-3 pb-4 space-y-2">
+      <div className="h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] text-sidebar-foreground/60 truncate max-w-[120px]">{user.email}</p>
+        <span className={`text-[10px] ${statusColor}`}>{statusLabel}</span>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onBackToSets}
+          className="text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors cursor-pointer"
+        >
+          My sets
+        </button>
+        <button
+          type="button"
+          onClick={signOut}
+          className="text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors cursor-pointer"
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const STEPS = [
   { label: "Context", icon: "1" },
   { label: "Select", icon: "2" },
@@ -96,6 +142,8 @@ export default function Sidebar({
   onReset,
   onShare,
   shared,
+  saveStatus,
+  onBackToSets,
   mobile,
 }) {
   if (mobile) {
@@ -168,6 +216,8 @@ export default function Sidebar({
           />
         </div>
       )}
+
+      <UserFooter saveStatus={saveStatus} onBackToSets={onBackToSets} />
     </nav>
   )
 }

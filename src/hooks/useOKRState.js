@@ -1,5 +1,4 @@
-import { useReducer, useEffect, useRef, useCallback } from "react"
-import { loadState, saveState } from "../utils/storage"
+import { useReducer, useCallback } from "react"
 
 const INITIAL_STATE = {
   step: 0,
@@ -63,15 +62,7 @@ function reducer(state, action) {
 }
 
 export function useOKRState() {
-  const saved = loadState()
-  const [state, dispatch] = useReducer(reducer, saved ? { ...INITIAL_STATE, ...saved } : INITIAL_STATE)
-  const timerRef = useRef(null)
-
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => saveState(state), 500)
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [state])
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   const setStep = useCallback((s) => dispatch({ type: "SET_STEP", payload: s }), [])
   const setCtx = useCallback((key, value) => dispatch({ type: "SET_CTX", key, value }), [])

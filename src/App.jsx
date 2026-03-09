@@ -1,7 +1,8 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { parseContextValue } from "./utils/parseContextValue"
 import { useOKRState } from "./hooks/useOKRState"
 import { useFunnelCalc } from "./hooks/useFunnelCalc"
+import { useCloudSync } from "./hooks/useCloudSync"
 import { generatePDF } from "./utils/exportPDF"
 import { generateExcel } from "./utils/exportExcel"
 import { copyNotionMarkdown } from "./utils/exportNotion"
@@ -11,6 +12,7 @@ import ContextStep from "./components/steps/ContextStep"
 import SelectionStep from "./components/steps/SelectionStep"
 import FunnelStep from "./components/steps/FunnelStep"
 import OKRSystemStep from "./components/steps/OKRSystemStep"
+import SetSelector from "./components/auth/SetSelector"
 
 export default function App() {
   const {
@@ -20,6 +22,17 @@ export default function App() {
   const calc = useFunnelCalc(state.funnel)
   const { share, shared } = useShareableURL(state, dispatch)
   const [notionCopied, setNotionCopied] = useState(false)
+
+  const {
+    activeSetId, saveStatus, sets,
+    loadSets, loadSet, createSet, setActiveSetId,
+  } = useCloudSync(state, dispatch)
+
+  const [setsLoading, setSetsLoading] = useState(true)
+
+  useEffect(() => {
+    loadSets().then(() => setSetsLoading(false))
+  }, [loadSets])
 
   const handleContextNext = useCallback(() => {
     const parsedWinRate = parseContextValue(state.ctx.winRate)
@@ -40,6 +53,29 @@ export default function App() {
     setTimeout(() => setNotionCopied(false), 2000)
   }, [state.ctx, state.selected, calc, state.customTargets])
 
+  const handleCreateNew = useCallback(async () => {
+    reset()
+    const newSet = await createSet("Mon OKR Set")
+    setActiveSetId(newSet.id)
+  }, [reset, createSet, setActiveSetId])
+
+  const handleBackToSets = useCallback(() => {
+    setActiveSetId(null)
+    reset()
+    loadSets()
+  }, [setActiveSetId, reset, loadSets])
+
+  if (!activeSetId) {
+    return (
+      <SetSelector
+        sets={sets}
+        loading={setsLoading}
+        onLoadSet={loadSet}
+        onCreateNew={handleCreateNew}
+      />
+    )
+  }
+
   return (
     <AppShell
       step={state.step}
@@ -50,6 +86,8 @@ export default function App() {
       onReset={() => { reset(); setStep(0) }}
       onShare={share}
       shared={shared}
+      saveStatus={saveStatus}
+      onBackToSets={handleBackToSets}
     >
       {state.step === 0 && (
         <ContextStep
