@@ -41,9 +41,7 @@ function reducer(state, action) {
       const cur = state.selected[team]
       const next = cur.includes(id)
         ? cur.filter(x => x !== id)
-        : cur.length >= 5
-          ? cur
-          : [...cur, id]
+        : [...cur, id]
       return { ...state, selected: { ...state.selected, [team]: next } }
     }
     case "SET_FUNNEL":

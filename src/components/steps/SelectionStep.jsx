@@ -3,7 +3,6 @@ import { TEAM_CONFIG, STAGE_CODES, BOTTLENECK_CODES, TEAMS, FOUNDER_LED_BOOST_ID
 import { scoreObj, getRecommendationLabel } from "../../utils/scoring"
 import { parseContextValue } from "../../utils/parseContextValue"
 import ObjectiveCard from "../ui/objective-card"
-import Tag from "../ui/tag-custom"
 import { Button } from "@/components/ui/button"
 
 function sortByRecommendation(objectives, stageCode, btlnkCode, ctxBonus) {
@@ -33,8 +32,7 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
           Select your objectives
         </h2>
         <p className="text-muted-foreground mt-2">
-          Maximum <strong>5 per team</strong>. &#9733; Recommended objectives
-          match your context.
+          &#9733; Recommended objectives match your context.
         </p>
       </div>
 
@@ -56,13 +54,8 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
                 {cfg.label}
               </p>
               <p className="font-mono text-2xl font-extrabold text-foreground mt-1">
-                {count} / 5
+                {count}
               </p>
-              {count >= 5 && (
-                <div className="mt-2">
-                  <Tag variant="warning">Max 5 selected</Tag>
-                </div>
-              )}
             </div>
           )
         })}
@@ -82,7 +75,6 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
                 style={{ backgroundColor: cfg.colorHex }}
               />
               <h3 className="font-sans font-bold text-xl text-foreground">{cfg.label}</h3>
-              {count >= 5 && <Tag variant="warning">Max 5 selected</Tag>}
             </div>
 
             <div className="space-y-2">
@@ -95,9 +87,7 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
                     key={obj.id}
                     objective={obj}
                     isSelected={selected[team].includes(obj.id)}
-                    isDisabled={
-                      !selected[team].includes(obj.id) && count >= 5
-                    }
+                    isDisabled={false}
                     recommendation={recommendation}
                     teamConfig={cfg}
                     onToggle={() => toggleObjective(team, obj.id)}
