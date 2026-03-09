@@ -29,11 +29,11 @@ export default function App({ onNavigate }) {
 
   const {
     activeSetId, saveStatus, sets,
-    loadSets, loadSet, createSet, setActiveSetId,
+    loadSets, loadSet, createSet, deleteSet, renameSet, setActiveSetId,
   } = useCloudSync(state, dispatch)
 
   const { krStatuses, setKRStatus, setKRProgress } = useKRSync(activeSetId)
-  const { actions, createAction, updateAction, deleteAction, actionsLoading } = useActions(activeSetId)
+  const { actions, createAction, batchCreateActions, updateAction, deleteAction, actionsLoading } = useActions(activeSetId)
   const { templates } = useTemplates(state.selected)
 
   const [setsLoading, setSetsLoading] = useState(true)
@@ -92,6 +92,8 @@ export default function App({ onNavigate }) {
         error={error}
         onLoadSet={loadSet}
         onCreateNew={handleCreateNew}
+        onDeleteSet={deleteSet}
+        onRenameSet={renameSet}
         onNavigate={onNavigate}
       />
     )
@@ -180,6 +182,7 @@ export default function App({ onNavigate }) {
           activeSetId={activeSetId}
           templates={templates}
           onCreateAction={createAction}
+          onBatchCreateActions={batchCreateActions}
           onUpdateAction={updateAction}
           onDeleteAction={deleteAction}
           onBack={() => setStep(3)}

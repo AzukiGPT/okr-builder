@@ -1,8 +1,56 @@
+import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "../../contexts/AuthContext"
+import { Trash2, Pencil, Check, X } from "lucide-react"
 
-export default function SetSelector({ sets, onLoadSet, onCreateNew, loading, creating, error, onNavigate }) {
+export default function SetSelector({
+  sets, onLoadSet, onCreateNew, onDeleteSet, onRenameSet,
+  loading, creating, error, onNavigate,
+}) {
   const { user, profile, signOut } = useAuth()
+  const [editingId, setEditingId] = useState(null)
+  const [editName, setEditName] = useState("")
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleStartRename = useCallback((e, set) => {
+    e.stopPropagation()
+    setEditingId(set.id)
+    setEditName(set.name || "")
+  }, [])
+
+  const handleConfirmRename = useCallback(async (e) => {
+    e.stopPropagation()
+    if (!editName.trim()) return
+    await onRenameSet(editingId, editName.trim())
+    setEditingId(null)
+  }, [editingId, editName, onRenameSet])
+
+  const handleCancelRename = useCallback((e) => {
+    e.stopPropagation()
+    setEditingId(null)
+  }, [])
+
+  const handleDeleteClick = useCallback((e, id) => {
+    e.stopPropagation()
+    setConfirmDeleteId(id)
+  }, [])
+
+  const handleConfirmDelete = useCallback(async (e) => {
+    e.stopPropagation()
+    setDeleting(true)
+    try {
+      await onDeleteSet(confirmDeleteId)
+    } finally {
+      setDeleting(false)
+      setConfirmDeleteId(null)
+    }
+  }, [confirmDeleteId, onDeleteSet])
+
+  const handleCancelDelete = useCallback((e) => {
+    e.stopPropagation()
+    setConfirmDeleteId(null)
+  }, [])
 
   if (loading) {
     return (
@@ -76,49 +124,124 @@ export default function SetSelector({ sets, onLoadSet, onCreateNew, loading, cre
               const objCount = (set.selected?.sales?.length || 0)
                 + (set.selected?.marketing?.length || 0)
                 + (set.selected?.csm?.length || 0)
+              const isEditing = editingId === set.id
+              const isConfirmingDelete = confirmDeleteId === set.id
 
               return (
-                <button
+                <div
                   key={set.id}
-                  type="button"
-                  onClick={() => onLoadSet(set)}
-                  className="w-full text-left rounded-xl border border-border bg-card p-5 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer glass-card group"
+                  className="relative rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all glass-card group"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                        {set.name || "Untitled"}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        {objCount > 0 && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-mono">
-                            {objCount} obj.
-                          </span>
+                  {isConfirmingDelete && (
+                    <div className="absolute inset-0 z-10 rounded-xl bg-card/95 backdrop-blur-sm flex items-center justify-center gap-3 p-4">
+                      <p className="text-sm text-foreground font-medium">Delete this set?</p>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={deleting}
+                        onClick={handleConfirmDelete}
+                      >
+                        {deleting ? "..." : "Delete"}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={handleCancelDelete}>
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => !isEditing && onLoadSet(set)}
+                    className="w-full text-left p-5 cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0 flex-1">
+                        {isEditing ? (
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleConfirmRename(e)
+                                if (e.key === "Escape") handleCancelRename(e)
+                              }}
+                              className="flex-1 text-sm font-semibold bg-background border border-border rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={handleConfirmRename}
+                              className="p-1 rounded hover:bg-emerald-100 text-emerald-600 cursor-pointer"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCancelRename}
+                              className="p-1 rounded hover:bg-gray-100 text-muted-foreground cursor-pointer"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                            {set.name || "Untitled"}
+                          </p>
                         )}
-                        {set.ctx?.stage && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-500 font-mono">
-                            {set.ctx.stage.split(" ")[0]}
-                          </span>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          {objCount > 0 && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-mono">
+                              {objCount} obj.
+                            </span>
+                          )}
+                          {set.ctx?.stage && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-500 font-mono">
+                              {set.ctx.stage.split(" ")[0]}
+                            </span>
+                          )}
+                          {set.ctx?.company && (
+                            <span className="text-xs text-muted-foreground truncate">
+                              {set.ctx.company}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 ml-4">
+                        {!isEditing && (
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={(e) => handleStartRename(e, set)}
+                              className="p-1.5 rounded-md hover:bg-gray-100 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                              title="Rename"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteClick(e, set.id)}
+                              className="p-1.5 rounded-md hover:bg-red-50 text-muted-foreground hover:text-red-500 transition-colors cursor-pointer"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         )}
-                        {set.ctx?.company && (
-                          <span className="text-xs text-muted-foreground truncate">
-                            {set.ctx.company}
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(set.updated_at).toLocaleDateString("fr-FR", {
+                              day: "numeric", month: "short",
+                            })}
+                          </p>
+                          <span className="text-muted-foreground/40 group-hover:text-primary transition-colors text-lg">
+                            →
                           </span>
-                        )}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right shrink-0 ml-4">
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(set.updated_at).toLocaleDateString("fr-FR", {
-                          day: "numeric", month: "short",
-                        })}
-                      </p>
-                      <span className="text-muted-foreground/40 group-hover:text-primary transition-colors text-lg">
-                        →
-                      </span>
-                    </div>
-                  </div>
-                </button>
+                  </button>
+                </div>
               )
             })}
           </div>

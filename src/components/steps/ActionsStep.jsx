@@ -17,6 +17,7 @@ export default function ActionsStep({
   activeSetId,
   templates,
   onCreateAction,
+  onBatchCreateActions,
   onUpdateAction,
   onDeleteAction,
   onBack,
@@ -68,7 +69,25 @@ export default function ActionsStep({
     setShowForm(false)
   }, [])
 
+  // Resolve template's relevant_kr_ids (text like "S1.2") to set_key_results UUIDs
+  const resolveKrUuids = useCallback((templateKrIds) => {
+    if (!templateKrIds || !krStatuses) return []
+    return templateKrIds
+      .map((krId) => krStatuses[krId]?.uuid)
+      .filter(Boolean)
+  }, [krStatuses])
+
+  // Track which templates are already added
+  const existingTemplateIds = useMemo(() => {
+    const ids = new Set()
+    for (const action of actions) {
+      if (action.template_id) ids.add(action.template_id)
+    }
+    return ids
+  }, [actions])
+
   const handleAddFromTemplate = useCallback((tpl) => {
+    const krUuids = resolveKrUuids(tpl.relevant_kr_ids)
     setEditingAction({
       title: tpl.title,
       description: tpl.description,
@@ -77,10 +96,25 @@ export default function ActionsStep({
       source: "template",
       template_id: tpl.id,
       priority: "medium",
-      kr_ids: [],
+      kr_ids: krUuids,
     })
     setShowForm(false)
-  }, [])
+  }, [resolveKrUuids])
+
+  const handleBatchAdd = useCallback(async (templatesToAdd) => {
+    if (!onBatchCreateActions) return
+    const payloads = templatesToAdd.map((tpl) => ({
+      title: tpl.title,
+      description: tpl.description,
+      channel: tpl.channel,
+      action_type: tpl.action_type,
+      source: "template",
+      template_id: tpl.id,
+      priority: "medium",
+      kr_ids: resolveKrUuids(tpl.relevant_kr_ids),
+    }))
+    await onBatchCreateActions(payloads)
+  }, [onBatchCreateActions, resolveKrUuids])
 
   const handleAddAction = useCallback(() => {
     setShowForm(true)
@@ -199,7 +233,12 @@ export default function ActionsStep({
 
       {/* Template suggestions */}
       {templates && templates.length > 0 && !showForm && !editingAction && (
-        <TemplateSuggestions templates={templates} onAddFromTemplate={handleAddFromTemplate} />
+        <TemplateSuggestions
+          templates={templates}
+          existingTemplateIds={existingTemplateIds}
+          onAddFromTemplate={handleAddFromTemplate}
+          onBatchAdd={handleBatchAdd}
+        />
       )}
 
       {/* Navigation */}

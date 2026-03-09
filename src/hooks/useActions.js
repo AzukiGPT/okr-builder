@@ -42,5 +42,15 @@ export function useActions(activeSetId) {
     setActions((prev) => prev.filter((a) => a.id !== id))
   }, [])
 
-  return { actions, actionsLoading, createAction, updateAction, deleteAction, loadActions }
+  const batchCreateActions = useCallback(async (payloads) => {
+    const results = []
+    for (const payload of payloads) {
+      const { data } = await api.createAction({ ...payload, set_id: activeSetId })
+      results.push(data)
+    }
+    setActions((prev) => [...results, ...prev])
+    return results
+  }, [activeSetId])
+
+  return { actions, actionsLoading, createAction, batchCreateActions, updateAction, deleteAction, loadActions }
 }

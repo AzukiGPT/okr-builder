@@ -1,21 +1,58 @@
+import { useState } from "react"
 import { ACTION_CHANNELS } from "../../data/actions-config"
-import { Sparkles, Plus } from "lucide-react"
+import { Sparkles, Plus, Zap, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
-export default function TemplateSuggestions({ templates, onAddFromTemplate }) {
+export default function TemplateSuggestions({
+  templates, onAddFromTemplate, onBatchAdd, existingTemplateIds,
+}) {
+  const [batchAdding, setBatchAdding] = useState(false)
+
   if (!templates || templates.length === 0) return null
+
+  const newTemplates = existingTemplateIds
+    ? templates.filter((tpl) => !existingTemplateIds.has(tpl.id))
+    : templates
+
+  const handleBatchAdd = async () => {
+    if (!onBatchAdd || newTemplates.length === 0) return
+    setBatchAdding(true)
+    try {
+      await onBatchAdd(newTemplates)
+    } finally {
+      setBatchAdding(false)
+    }
+  }
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Sparkles className="w-4 h-4 text-amber-500" />
-        <h3 className="font-sans font-bold text-sm text-foreground">Suggested actions</h3>
-        <span className="text-[10px] text-muted-foreground">
-          based on your selected objectives
-        </span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-amber-500" />
+          <h3 className="font-sans font-bold text-sm text-foreground">Suggested actions</h3>
+          <span className="text-[10px] text-muted-foreground">
+            {newTemplates.length} suggestion{newTemplates.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+        {onBatchAdd && newTemplates.length > 0 && (
+          <Button
+            size="sm"
+            onClick={handleBatchAdd}
+            disabled={batchAdding}
+            className="gap-1.5"
+          >
+            {batchAdding ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Zap className="w-3.5 h-3.5" />
+            )}
+            {batchAdding ? "Adding..." : `Add all (${newTemplates.length})`}
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {templates.map((tpl) => {
+        {newTemplates.map((tpl) => {
           const channel = ACTION_CHANNELS[tpl.channel]
 
           return (
@@ -66,6 +103,12 @@ export default function TemplateSuggestions({ templates, onAddFromTemplate }) {
           )
         })}
       </div>
+
+      {existingTemplateIds && newTemplates.length === 0 && templates.length > 0 && (
+        <p className="text-xs text-muted-foreground text-center py-2">
+          All suggested actions have been added to your plan.
+        </p>
+      )}
     </div>
   )
 }
