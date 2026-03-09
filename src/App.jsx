@@ -29,6 +29,8 @@ export default function App({ onNavigate }) {
   } = useCloudSync(state, dispatch)
 
   const [setsLoading, setSetsLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     loadSets().then(() => setSetsLoading(false))
@@ -54,9 +56,17 @@ export default function App({ onNavigate }) {
   }, [state.ctx, state.selected, calc, state.customTargets])
 
   const handleCreateNew = useCallback(async () => {
-    reset()
-    const newSet = await createSet("Mon OKR Set")
-    setActiveSetId(newSet.id)
+    setCreating(true)
+    setError(null)
+    try {
+      reset()
+      const newSet = await createSet("Mon OKR Set")
+      setActiveSetId(newSet.id)
+    } catch (err) {
+      setError(err.message || "Failed to create set. Please try again.")
+    } finally {
+      setCreating(false)
+    }
   }, [reset, createSet, setActiveSetId])
 
   const handleBackToSets = useCallback(() => {
@@ -70,8 +80,11 @@ export default function App({ onNavigate }) {
       <SetSelector
         sets={sets}
         loading={setsLoading}
+        creating={creating}
+        error={error}
         onLoadSet={loadSet}
         onCreateNew={handleCreateNew}
+        onNavigate={onNavigate}
       />
     )
   }
