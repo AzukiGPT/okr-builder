@@ -1,5 +1,6 @@
 import { useOKRState } from "./hooks/useOKRState"
 import { useFunnelCalc } from "./hooks/useFunnelCalc"
+import { generatePDF } from "./utils/exportPDF"
 import AppShell from "./components/layout/AppShell"
 import ContextStep from "./components/steps/ContextStep"
 import SelectionStep from "./components/steps/SelectionStep"
@@ -56,7 +57,12 @@ export default function App() {
           setCustomTarget={setCustomTarget}
           onBack={() => setStep(2)}
           onReset={() => { reset(); setStep(0) }}
-          onExportPDF={() => {}}
+          onExportPDF={() => generatePDF({
+            ctx: state.ctx,
+            selected: state.selected,
+            calc,
+            customTargets: state.customTargets,
+          })}
           onShare={() => {}}
           shared={false}
         />
