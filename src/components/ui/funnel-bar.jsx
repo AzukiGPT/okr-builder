@@ -27,7 +27,7 @@ export default function FunnelBar({ label, value, max, colorHex, weekly, daily }
           style={{
             width: `${fillPercent}%`,
             backgroundColor: colorHex,
-            boxShadow: `0 0 8px -2px ${colorHex}60`,
+            boxShadow: `0 0 6px -2px ${colorHex}30`,
           }}
         />
       </div>

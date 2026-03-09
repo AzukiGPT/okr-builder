@@ -1,14 +1,15 @@
 import { OBJECTIVES } from "../../data/objectives"
-import { TEAM_CONFIG, STAGE_CODES, BOTTLENECK_CODES, TEAMS } from "../../data/config"
+import { TEAM_CONFIG, STAGE_CODES, BOTTLENECK_CODES, TEAMS, FOUNDER_LED_BOOST_IDS } from "../../data/config"
 import { scoreObj, getRecommendationLabel } from "../../utils/scoring"
+import { parseContextValue } from "../../utils/parseContextValue"
 import ObjectiveCard from "../ui/objective-card"
 import Tag from "../ui/tag-custom"
 import { Button } from "@/components/ui/button"
 
-function sortByRecommendation(objectives, stageCode, btlnkCode) {
+function sortByRecommendation(objectives, stageCode, btlnkCode, ctxBonus) {
   return [...objectives].sort((a, b) => {
-    const scoreA = scoreObj(a, stageCode, btlnkCode)
-    const scoreB = scoreObj(b, stageCode, btlnkCode)
+    const scoreA = scoreObj(a, stageCode, btlnkCode, ctxBonus)
+    const scoreB = scoreObj(b, stageCode, btlnkCode, ctxBonus)
     return scoreB - scoreA
   })
 }
@@ -16,6 +17,14 @@ function sortByRecommendation(objectives, stageCode, btlnkCode) {
 export default function SelectionStep({ ctx, selected, toggleObjective, onNext, onBack }) {
   const stageCode = STAGE_CODES[ctx.stage] || ""
   const btlnkCode = BOTTLENECK_CODES[ctx.bottleneck] || ""
+
+  const parsedChurn = parseContextValue(ctx.churn)
+  const founderLedNorm = (ctx.founderLed || "").trim().toLowerCase()
+  const isFounderLed = founderLedNorm === "yes" || founderLedNorm === "partially"
+  const ctxBonus = {
+    churnBonus: parsedChurn != null && parsedChurn >= 10 ? 1 : 0,
+    founderLedIds: isFounderLed ? FOUNDER_LED_BOOST_IDS : [],
+  }
 
   return (
     <div className="space-y-6">
@@ -62,7 +71,7 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
       {TEAMS.map((team) => {
         const cfg = TEAM_CONFIG[team]
         const objectives = OBJECTIVES[team]
-        const sorted = sortByRecommendation(objectives, stageCode, btlnkCode)
+        const sorted = sortByRecommendation(objectives, stageCode, btlnkCode, ctxBonus)
         const count = selected[team].length
 
         return (
@@ -78,7 +87,7 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
 
             <div className="space-y-2">
               {sorted.map((obj) => {
-                const score = scoreObj(obj, stageCode, btlnkCode)
+                const score = scoreObj(obj, stageCode, btlnkCode, ctxBonus)
                 const recommendation = getRecommendationLabel(score)
 
                 return (

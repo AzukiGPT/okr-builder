@@ -46,11 +46,9 @@ export default function ObjectiveCard({
       : isRecommended
         ? `${colorHex}08`
         : undefined,
-    backdropFilter: "blur(8px)",
-    WebkitBackdropFilter: "blur(8px)",
     boxShadow: isSelected
-      ? `0 0 20px -5px ${colorHex}30, 0 4px 24px -4px oklch(0 0 0 / 0.2)`
-      : "0 4px 24px -4px oklch(0 0 0 / 0.2)",
+      ? `0 0 12px -4px ${colorHex}20, 0 1px 3px 0 oklch(0 0 0 / 0.06)`
+      : "0 1px 3px 0 oklch(0 0 0 / 0.06)",
   }
 
   return (
@@ -66,7 +64,7 @@ export default function ObjectiveCard({
         className="flex items-center justify-center w-5 h-5 rounded shrink-0 mt-0.5 text-[11px] font-bold text-white"
         style={{
           backgroundColor: isSelected ? colorHex : "transparent",
-          border: isSelected ? "none" : "2px solid hsl(240 4% 20%)",
+          border: isSelected ? "none" : "2px solid oklch(0.82 0.005 280)",
           color: isSelected ? "#FFFFFF" : "transparent",
         }}
       >

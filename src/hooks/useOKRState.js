@@ -51,6 +51,8 @@ function reducer(state, action) {
       return { ...state, funnel: { ...state.funnel, [action.key]: action.value } }
     case "SET_CUSTOM_TARGET":
       return { ...state, customTargets: { ...state.customTargets, [action.krId]: action.value } }
+    case "SYNC_CTX_TO_FUNNEL":
+      return { ...state, funnel: { ...state.funnel, ...action.payload } }
     case "RESET":
       return { ...INITIAL_STATE }
     case "LOAD":
@@ -76,7 +78,8 @@ export function useOKRState() {
   const toggleObjective = useCallback((team, id) => dispatch({ type: "TOGGLE_OBJECTIVE", payload: { team, id } }), [])
   const setFunnel = useCallback((key, value) => dispatch({ type: "SET_FUNNEL", key, value }), [])
   const setCustomTarget = useCallback((krId, value) => dispatch({ type: "SET_CUSTOM_TARGET", krId, value }), [])
+  const syncCtxToFunnel = useCallback((updates) => dispatch({ type: "SYNC_CTX_TO_FUNNEL", payload: updates }), [])
   const reset = useCallback(() => dispatch({ type: "RESET" }), [])
 
-  return { state, dispatch, setStep, setCtx, toggleObjective, setFunnel, setCustomTarget, reset }
+  return { state, dispatch, setStep, setCtx, toggleObjective, setFunnel, setCustomTarget, syncCtxToFunnel, reset }
 }

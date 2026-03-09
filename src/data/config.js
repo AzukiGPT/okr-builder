@@ -37,3 +37,5 @@ export const TEAM_CONFIG = {
 export const TEAMS = Object.keys(TEAM_CONFIG)
 export const STAGES = Object.keys(STAGE_CODES)
 export const BOTTLENECKS = Object.keys(BOTTLENECK_CODES)
+
+export const FOUNDER_LED_BOOST_IDS = ["S2", "S5", "S9"]

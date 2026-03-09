@@ -29,6 +29,9 @@ export default function OKRSystemStep({
   onBack,
   onReset,
   onExportPDF,
+  onExportExcel,
+  onCopyNotion,
+  notionCopied,
   onShare,
   shared,
 }) {
@@ -106,7 +109,7 @@ export default function OKRSystemStep({
         return (
           <div key={team} className="space-y-4">
             <div
-              className="rounded-lg px-5 py-3 shadow-lg shadow-black/20"
+              className="rounded-lg px-5 py-3 shadow-sm"
               style={{ background: `linear-gradient(135deg, ${cfg.colorHex}, ${cfg.colorHex}88)` }}
             >
               <h3 className="font-sans font-bold text-white text-lg">{cfg.label}</h3>
@@ -116,7 +119,7 @@ export default function OKRSystemStep({
               <div key={obj.id} className="space-y-0">
                 <div
                   className="rounded-t-lg px-5 py-3"
-                  style={{ backgroundColor: `${cfg.colorHex}10` }}
+                  style={{ backgroundColor: `${cfg.colorHex}12` }}
                 >
                   <div className="flex items-center gap-2">
                     <span
@@ -198,6 +201,12 @@ export default function OKRSystemStep({
           </Button>
           <Button variant="outline" onClick={onShare}>
             {shared ? "Copied!" : "Share"}
+          </Button>
+          <Button variant="outline" onClick={onCopyNotion}>
+            {notionCopied ? "Copied!" : "Copy for Notion"}
+          </Button>
+          <Button variant="outline" onClick={onExportExcel}>
+            Export Excel
           </Button>
           <Button onClick={onExportPDF}>
             Export PDF

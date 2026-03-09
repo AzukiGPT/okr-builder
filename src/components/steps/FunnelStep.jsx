@@ -1,3 +1,4 @@
+import { parseContextValue } from "../../utils/parseContextValue"
 import FunnelBar from "../ui/funnel-bar"
 import { Button } from "@/components/ui/button"
 
@@ -56,8 +57,12 @@ function FunnelInput({ inputDef, value, onChange, borderColor }) {
   )
 }
 
-export default function FunnelStep({ funnel, setFunnel, calc, onNext, onBack }) {
+export default function FunnelStep({ funnel, setFunnel, calc, ctxArr, ctxWinRate, onNext, onBack }) {
   const maxBar = calc.calls
+  const parsedArr = parseContextValue(ctxArr)
+  const growthMultiplier = parsedArr != null && parsedArr > 0
+    ? (funnel.target / parsedArr).toFixed(1)
+    : null
 
   const improvedProposals = Math.round(
     calc.deals / Math.max((funnel.winRate + 5) / 100, 0.001)
@@ -84,13 +89,19 @@ export default function FunnelStep({ funnel, setFunnel, calc, onNext, onBack }) 
             Revenue model inputs
           </p>
           {SALES_INPUTS.map((inp) => (
-            <FunnelInput
-              key={inp.key}
-              inputDef={inp}
-              value={funnel[inp.key]}
-              onChange={setFunnel}
-              borderColor="#8B5CF6"
-            />
+            <div key={inp.key}>
+              <FunnelInput
+                inputDef={inp}
+                value={funnel[inp.key]}
+                onChange={setFunnel}
+                borderColor="#8B5CF6"
+              />
+              {inp.key === "winRate" && ctxWinRate && (
+                <p className="text-xs text-muted-foreground -mt-2 ml-1">
+                  Pre-filled from context ({ctxWinRate})
+                </p>
+              )}
+            </div>
           ))}
 
           <hr className="border-border" />
@@ -153,11 +164,23 @@ export default function FunnelStep({ funnel, setFunnel, calc, onNext, onBack }) 
             </div>
           </div>
 
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 shadow-[0_0_20px_-5px_oklch(0.7_0.15_85_/_0.15)]">
-            <p className="text-sm font-semibold text-amber-400">
+          {growthMultiplier && (
+            <div className="bg-violet-50 border border-violet-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-violet-700">
+                Growth challenge
+              </p>
+              <p className="text-sm text-violet-600 mt-1">
+                Current ARR: {ctxArr} &rarr; Target: &euro;{(funnel.target / 1000).toFixed(0)}k
+                = <strong>{growthMultiplier}x</strong> growth needed
+              </p>
+            </div>
+          )}
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-[0_0_15px_-5px_oklch(0.7_0.15_85_/_0.08)]">
+            <p className="text-sm font-semibold text-amber-700">
               Key insight
             </p>
-            <p className="text-sm text-amber-300 mt-1">
+            <p className="text-sm text-amber-600 mt-1">
               {demosSaved > 0
                 ? `A +5% win rate improvement (${funnel.winRate}% \u2192 ${funnel.winRate + 5}%) would save ${demosSaved} demos per year, reducing pressure on pipeline generation.`
                 : `Increasing win rate from ${funnel.winRate}% to ${funnel.winRate + 5}% would reduce demos needed from ${calc.demos} to ${improvedDemos}.`}

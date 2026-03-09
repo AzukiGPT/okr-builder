@@ -34,7 +34,7 @@ function StepButton({ step, index, currentStep, maxStep, onClick }) {
       }`}
     >
       <span
-        className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-mono font-bold text-white shrink-0 ${circleClass}${isActive ? " glow-sm" : ""}`}
+        className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-mono font-bold shrink-0 ${circleClass}${isActive ? " glow-sm" : ""} ${isDone || isActive ? "text-white" : "text-muted-foreground"}`}
       >
         {isDone ? "\u2713" : step.icon}
       </span>
@@ -100,7 +100,7 @@ export default function Sidebar({
 }) {
   if (mobile) {
     return (
-      <nav className="w-full bg-sidebar border-b border-sidebar-border px-4 py-3 flex items-center gap-2 shadow-lg shadow-black/30">
+      <nav className="w-full bg-sidebar border-b border-sidebar-border px-4 py-3 flex items-center gap-2 shadow-sm">
         <span className="font-sans font-bold text-sidebar-foreground text-lg mr-4">OKR Builder</span>
         <div className="flex items-center gap-1">
           {STEPS.map((s, i) => {
@@ -120,7 +120,7 @@ export default function Sidebar({
                 type="button"
                 disabled={!isClickable}
                 onClick={() => setStep(i)}
-                className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-mono font-bold text-white shrink-0 ${circleClass} ${
+                className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-mono font-bold shrink-0 ${circleClass} ${isDone || isActive ? "text-white" : "text-muted-foreground"} ${
                   isClickable ? "cursor-pointer" : "cursor-default"
                 }`}
               >
@@ -134,7 +134,7 @@ export default function Sidebar({
   }
 
   return (
-    <nav className="w-56 h-screen sticky top-0 border-r border-sidebar-border/50 flex flex-col" style={{ background: 'linear-gradient(180deg, oklch(0.13 0.015 280), oklch(0.09 0.008 280))' }}>
+    <nav className="w-56 h-screen sticky top-0 border-r border-sidebar-border/50 flex flex-col bg-sidebar">
       <div className="px-5 pt-6 pb-4">
         <h1 className="font-sans font-bold text-xl gradient-heading">OKR Builder</h1>
         {ctx.company && (

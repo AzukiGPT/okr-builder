@@ -6,7 +6,7 @@ function RadioGroup({ label, options, value, onChange, selectedBorderColor }) {
   return (
     <div
       className="bg-card rounded-xl p-5 border-2 transition-colors glass-card"
-      style={{ borderColor: value ? selectedBorderColor : "hsl(240 4% 20%)" }}
+      style={{ borderColor: value ? selectedBorderColor : "oklch(0.82 0.005 280)" }}
     >
       <p className="uppercase text-xs font-semibold tracking-wide text-muted-foreground mb-3">
         {label}
@@ -27,7 +27,7 @@ function RadioGroup({ label, options, value, onChange, selectedBorderColor }) {
                 style={{
                   width: 18,
                   height: 18,
-                  border: isSelected ? "none" : "2px solid hsl(240 4% 20%)",
+                  border: isSelected ? "none" : "2px solid oklch(0.82 0.005 280)",
                   backgroundColor: isSelected ? selectedBorderColor : "transparent",
                 }}
               >
@@ -137,16 +137,17 @@ export default function ContextStep({ ctx, setCtx, onNext }) {
           placeholder="e.g. 8%"
           onChange={(val) => setCtx("churn", val)}
         />
-        <TextInputCard
+        <RadioGroup
           label="Founder-led sales?"
+          options={["Yes", "Partially", "No"]}
           value={ctx.founderLed}
-          placeholder="Yes / Partially / No"
           onChange={(val) => setCtx("founderLed", val)}
+          selectedBorderColor="#F59E0B"
         />
       </div>
 
       {contextReady && (
-        <div className="bg-primary/10 rounded-xl p-5 border border-primary/20 shadow-[0_0_30px_-10px_oklch(0.55_0.2_280_/_0.3)]">
+        <div className="bg-primary/10 rounded-xl p-5 border border-primary/20 shadow-[0_0_20px_-8px_oklch(0.55_0.2_280_/_0.15)]">
           <div className="flex items-start gap-3">
             <span className="text-primary text-xl shrink-0" aria-hidden="true">
               &#10003;
