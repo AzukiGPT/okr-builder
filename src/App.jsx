@@ -3,6 +3,9 @@ import { parseContextValue } from "./utils/parseContextValue"
 import { useOKRState } from "./hooks/useOKRState"
 import { useFunnelCalc } from "./hooks/useFunnelCalc"
 import { useCloudSync } from "./hooks/useCloudSync"
+import { useKRSync } from "./hooks/useKRSync"
+import { useActions } from "./hooks/useActions"
+import { useTemplates } from "./hooks/useTemplates"
 import { generatePDF } from "./utils/exportPDF"
 import { generateExcel } from "./utils/exportExcel"
 import { copyNotionMarkdown } from "./utils/exportNotion"
@@ -12,6 +15,7 @@ import ContextStep from "./components/steps/ContextStep"
 import SelectionStep from "./components/steps/SelectionStep"
 import FunnelStep from "./components/steps/FunnelStep"
 import OKRSystemStep from "./components/steps/OKRSystemStep"
+import ActionsStep from "./components/steps/ActionsStep"
 import SetSelector from "./components/auth/SetSelector"
 
 export default function App({ onNavigate }) {
@@ -27,6 +31,10 @@ export default function App({ onNavigate }) {
     activeSetId, saveStatus, sets,
     loadSets, loadSet, createSet, setActiveSetId,
   } = useCloudSync(state, dispatch)
+
+  const { krStatuses, setKRStatus, setKRProgress } = useKRSync(activeSetId)
+  const { actions, createAction, updateAction, deleteAction, actionsLoading } = useActions(activeSetId)
+  const { templates } = useTemplates(state.selected)
 
   const [setsLoading, setSetsLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -138,9 +146,12 @@ export default function App({ onNavigate }) {
           calc={calc}
           customTargets={state.customTargets}
           setCustomTarget={setCustomTarget}
+          krStatuses={krStatuses}
+          onKRStatusChange={setKRStatus}
+          onKRProgressChange={setKRProgress}
           onBack={() => setStep(2)}
+          onNext={() => setStep(4)}
           onReset={() => { reset(); setStep(0) }}
-          onBackToSets={handleBackToSets}
           onExportPDF={() => generatePDF({
             ctx: state.ctx,
             selected: state.selected,
@@ -158,6 +169,21 @@ export default function App({ onNavigate }) {
           notionCopied={notionCopied}
           onShare={share}
           shared={shared}
+        />
+      )}
+      {state.step === 4 && (
+        <ActionsStep
+          selected={state.selected}
+          actions={actions}
+          actionsLoading={actionsLoading}
+          krStatuses={krStatuses}
+          activeSetId={activeSetId}
+          templates={templates}
+          onCreateAction={createAction}
+          onUpdateAction={updateAction}
+          onDeleteAction={deleteAction}
+          onBack={() => setStep(3)}
+          onBackToSets={handleBackToSets}
         />
       )}
     </AppShell>

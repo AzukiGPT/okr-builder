@@ -58,6 +58,7 @@ const STEPS = [
   { label: "Select", icon: "2" },
   { label: "Funnel", icon: "3" },
   { label: "System", icon: "4" },
+  { label: "Actions", icon: "5" },
 ]
 
 function StepButton({ step, index, currentStep, maxStep, onClick }) {

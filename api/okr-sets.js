@@ -168,35 +168,91 @@ async function handleDelete(req, user) {
 // ─── Sync helpers ────────────────────────────────────────────
 
 async function syncObjectivesToNormalized(setId, selected, customTargets) {
-  // Clear existing (CASCADE deletes KRs)
-  await supabaseAdmin.from("set_objectives").delete().eq("set_id", setId)
+  // 1. Fetch existing objectives for this set
+  const { data: existingObjs } = await supabaseAdmin
+    .from("set_objectives")
+    .select("id, objective_id, team, position")
+    .eq("set_id", setId)
 
+  const existingObjMap = new Map(
+    (existingObjs || []).map((o) => [o.objective_id, o])
+  )
+
+  // 2. Determine which objectives should exist
+  const desiredObjIds = new Set()
+  for (const team of ["sales", "marketing", "csm"]) {
+    for (const objId of selected[team] || []) {
+      desiredObjIds.add(objId)
+    }
+  }
+
+  // 3. Delete objectives no longer selected (CASCADE deletes KRs + action_kr_links)
+  const toDelete = (existingObjs || [])
+    .filter((o) => !desiredObjIds.has(o.objective_id))
+    .map((o) => o.id)
+
+  if (toDelete.length > 0) {
+    await supabaseAdmin.from("set_objectives").delete().in("id", toDelete)
+  }
+
+  // 4. Upsert objectives and their KRs (preserves UUIDs, status, progress)
   for (const team of ["sales", "marketing", "csm"]) {
     const objIds = selected[team] || []
 
     for (let pos = 0; pos < objIds.length; pos++) {
       const objId = objIds[pos]
+      let setObjId
 
-      const { data: obj } = await supabaseAdmin
-        .from("set_objectives")
-        .insert({ set_id: setId, objective_id: objId, team, position: pos })
-        .select("id")
-        .single()
-
-      if (!obj) continue
-
-      // Create KR rows (objId.1 through objId.10 covers all objectives)
-      const krInserts = []
-      for (let i = 1; i <= 10; i++) {
-        const krId = `${objId}.${i}`
-        krInserts.push({
-          set_objective_id: obj.id,
-          kr_id: krId,
-          custom_target: customTargets[krId] || null,
-        })
+      const existing = existingObjMap.get(objId)
+      if (existing) {
+        setObjId = existing.id
+        if (existing.position !== pos || existing.team !== team) {
+          await supabaseAdmin
+            .from("set_objectives")
+            .update({ position: pos, team })
+            .eq("id", setObjId)
+        }
+      } else {
+        const { data: obj } = await supabaseAdmin
+          .from("set_objectives")
+          .insert({ set_id: setId, objective_id: objId, team, position: pos })
+          .select("id")
+          .single()
+        if (!obj) continue
+        setObjId = obj.id
       }
 
-      await supabaseAdmin.from("set_key_results").insert(krInserts)
+      // Upsert KRs — preserve existing status/progress
+      const { data: existingKRs } = await supabaseAdmin
+        .from("set_key_results")
+        .select("id, kr_id")
+        .eq("set_objective_id", setObjId)
+
+      const existingKRMap = new Map(
+        (existingKRs || []).map((kr) => [kr.kr_id, kr])
+      )
+
+      for (let i = 1; i <= 10; i++) {
+        const krId = `${objId}.${i}`
+        const existingKR = existingKRMap.get(krId)
+
+        if (existingKR) {
+          // Only update custom_target — keep status + progress intact
+          await supabaseAdmin
+            .from("set_key_results")
+            .update({
+              custom_target: customTargets[krId] || null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingKR.id)
+        } else {
+          await supabaseAdmin.from("set_key_results").insert({
+            set_objective_id: setObjId,
+            kr_id: krId,
+            custom_target: customTargets[krId] || null,
+          })
+        }
+      }
     }
   }
 }

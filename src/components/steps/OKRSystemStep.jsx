@@ -35,7 +35,11 @@ export default function OKRSystemStep({
   calc,
   customTargets,
   setCustomTarget,
+  krStatuses,
+  onKRStatusChange,
+  onKRProgressChange,
   onBack,
+  onNext,
   onReset,
   onBackToSets,
   onExportPDF,
@@ -125,27 +129,56 @@ export default function OKRSystemStep({
               <h3 className="font-sans font-bold text-white text-lg">{cfg.label}</h3>
             </div>
 
-            {selectedObjs.map((obj) => (
+            {selectedObjs.map((obj) => {
+              const objKrProgress = obj.krs.reduce((sum, kr) => {
+                return sum + (krStatuses?.[kr.id]?.progress || 0)
+              }, 0)
+              const objAvgProgress = obj.krs.length > 0
+                ? Math.round(objKrProgress / obj.krs.length)
+                : 0
+
+              return (
               <div key={obj.id} className="space-y-0">
                 <div
                   className="rounded-t-lg px-5 py-3"
                   style={{ backgroundColor: `${cfg.colorHex}12` }}
                 >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="font-mono text-xs font-bold"
-                      style={{ color: cfg.colorHex }}
-                    >
-                      {obj.id}
-                    </span>
-                    <span className="font-bold text-sm text-foreground">
-                      {obj.title}
-                    </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="font-mono text-xs font-bold"
+                        style={{ color: cfg.colorHex }}
+                      >
+                        {obj.id}
+                      </span>
+                      <span className="font-bold text-sm text-foreground">
+                        {obj.title}
+                      </span>
+                    </div>
+                    {krStatuses && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 h-2 rounded-full bg-gray-200 overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${objAvgProgress}%`,
+                              backgroundColor: cfg.colorHex,
+                            }}
+                          />
+                        </div>
+                        <span
+                          className="text-xs font-mono font-bold"
+                          style={{ color: cfg.colorHex }}
+                        >
+                          {objAvgProgress}%
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="border border-border rounded-b-lg overflow-x-auto glass-card">
-                  <div className="grid grid-cols-[40px_36px_1fr_160px_80px] px-5 py-2 bg-muted">
+                  <div className="grid grid-cols-[40px_36px_1fr_140px_100px_56px_72px] gap-1 px-5 py-2 bg-muted">
                     <span className="text-[10px] uppercase font-semibold text-muted-foreground">
                       #
                     </span>
@@ -157,6 +190,12 @@ export default function OKRSystemStep({
                     </span>
                     <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
                       Target
+                    </span>
+                    <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
+                      Status
+                    </span>
+                    <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
+                      %
                     </span>
                     <span className="text-[10px] uppercase font-semibold text-muted-foreground text-right">
                       Type
@@ -176,11 +215,16 @@ export default function OKRSystemStep({
                       }
                       customTarget={customTargets[kr.id]}
                       onTargetChange={(krId, val) => setCustomTarget(krId, val)}
+                      krStatus={krStatuses?.[kr.id]?.status}
+                      krProgress={krStatuses?.[kr.id]?.progress}
+                      onStatusChange={onKRStatusChange}
+                      onProgressChange={onKRProgressChange}
                     />
                   ))}
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )
       })}
@@ -290,7 +334,18 @@ export default function OKRSystemStep({
         </div>
       </div>
 
-      {onBackToSets && (
+      {totalSelected > 0 && onNext && (
+        <div className="flex items-center justify-between pt-4">
+          <Button variant="ghost" onClick={onBack}>
+            &larr; Back
+          </Button>
+          <Button onClick={onNext}>
+            Action Plan &rarr;
+          </Button>
+        </div>
+      )}
+
+      {onBackToSets && !onNext && (
         <div className="flex justify-center pt-2 pb-4">
           <Button onClick={onBackToSets} size="lg" className="px-8">
             Done — back to my sets

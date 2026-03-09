@@ -1,5 +1,19 @@
 import Tag from "./tag-custom"
 
+const STATUS_OPTIONS = [
+  { value: "not_started", label: "Not Started" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "at_risk", label: "At Risk" },
+  { value: "done", label: "Done" },
+]
+
+const STATUS_COLORS = {
+  not_started: "#6B7280",
+  in_progress: "#3B82F6",
+  at_risk: "#F59E0B",
+  done: "#22C55E",
+}
+
 export default function KRRow({
   kr,
   index,
@@ -7,18 +21,18 @@ export default function KRRow({
   suggestedTarget,
   customTarget,
   onTargetChange,
+  krStatus = "not_started",
+  krProgress = 0,
+  onStatusChange,
+  onProgressChange,
 }) {
   const { colorHex } = teamConfig
   const rowBg = index % 2 === 0 ? "bg-card/50" : "bg-card"
   const tagVariant = kr.type === "Leading" ? "leading" : "lagging"
   const displayValue = customTarget ?? suggestedTarget ?? ""
 
-  const handleChange = (e) => {
-    onTargetChange(kr.id, e.target.value)
-  }
-
   return (
-    <div className={`grid grid-cols-[40px_36px_1fr_160px_80px] items-center px-5 py-3 ${rowBg}`}>
+    <div className={`grid grid-cols-[40px_36px_1fr_140px_100px_56px_72px] items-center px-5 py-3 gap-1 ${rowBg}`}>
       <span
         className="font-mono font-bold text-xs"
         style={{ color: colorHex }}
@@ -26,14 +40,56 @@ export default function KRRow({
         {index + 1}
       </span>
       <span className="font-mono text-[10px] text-muted-foreground">{kr.id}</span>
-      <span className="text-sm text-foreground">{kr.text}</span>
+      <span className="text-sm text-foreground pr-2">{kr.text}</span>
       <input
         type="text"
         value={displayValue}
-        onChange={handleChange}
+        onChange={(e) => onTargetChange(kr.id, e.target.value)}
         className="w-full px-2 py-1 border rounded text-xs font-mono text-center bg-background border-border text-foreground focus:outline-none focus:ring-1"
         style={{ "--tw-ring-color": colorHex }}
       />
+      {onStatusChange ? (
+        <select
+          value={krStatus}
+          onChange={(e) => onStatusChange(kr.id, e.target.value)}
+          className="w-full px-1 py-1 border rounded text-[10px] font-semibold bg-background border-border text-foreground focus:outline-none focus:ring-1 cursor-pointer"
+          style={{
+            "--tw-ring-color": STATUS_COLORS[krStatus] || colorHex,
+            color: STATUS_COLORS[krStatus],
+          }}
+        >
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      ) : (
+        <span />
+      )}
+      {onProgressChange ? (
+        <div className="relative w-full">
+          <div className="absolute inset-0 rounded overflow-hidden bg-gray-100">
+            <div
+              className="h-full transition-all duration-300"
+              style={{
+                width: `${krProgress}%`,
+                backgroundColor: STATUS_COLORS[krStatus] || colorHex,
+                opacity: 0.2,
+              }}
+            />
+          </div>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={krProgress}
+            onChange={(e) => onProgressChange(kr.id, e.target.value)}
+            className="relative w-full px-1 py-1 text-[10px] font-mono text-center bg-transparent border border-border rounded focus:outline-none focus:ring-1"
+            style={{ "--tw-ring-color": colorHex }}
+          />
+        </div>
+      ) : (
+        <span />
+      )}
       <div className="flex justify-end">
         <Tag variant={tagVariant}>{kr.type}</Tag>
       </div>

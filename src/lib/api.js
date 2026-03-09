@@ -29,6 +29,14 @@ export const api = {
   updateAction: (id, payload) => apiFetch(`/actions?id=${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteAction: (id) => apiFetch(`/actions?id=${id}`, { method: "DELETE" }),
 
+  listKRStatuses: (setId) => apiFetch(`/kr-status?set_id=${setId}`),
+  updateKRStatus: (setId, payload) => apiFetch(`/kr-status?set_id=${setId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+
+  listTemplates: (objectiveIds) => {
+    const params = objectiveIds?.length ? `?objective_ids=${objectiveIds.join(",")}` : ""
+    return apiFetch(`/action-templates${params}`)
+  },
+
   getProfile: () => apiFetch("/me"),
   updateProfile: (payload) => apiFetch("/me", { method: "PATCH", body: JSON.stringify(payload) }),
   adminListUsers: (filter = "pending") => apiFetch(`/admin/users?filter=${filter}`),
