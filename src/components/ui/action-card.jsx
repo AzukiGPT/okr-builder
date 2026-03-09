@@ -2,7 +2,7 @@ import Tag from "./tag-custom"
 import { ACTION_CHANNELS, ACTION_TYPES, ACTION_STATUSES, ACTION_PRIORITIES } from "../../data/actions-config"
 import { Pencil, Trash2, Calendar, DollarSign } from "lucide-react"
 
-export default function ActionCard({ action, onEdit, onDelete }) {
+export default function ActionCard({ action, onEdit, onDelete, compact = false }) {
   const channel = ACTION_CHANNELS[action.channel]
   const actionType = ACTION_TYPES[action.action_type]
   const status = ACTION_STATUSES[action.status] || ACTION_STATUSES.todo
@@ -10,6 +10,25 @@ export default function ActionCard({ action, onEdit, onDelete }) {
 
   const hasDateInfo = action.start_date || action.end_date
   const hasBudget = action.budget_estimated > 0
+
+  if (compact) {
+    return (
+      <div className="rounded-md border border-border bg-card p-2.5 space-y-1.5 hover:border-primary/30 transition-colors">
+        <h4 className="font-medium text-xs text-foreground line-clamp-2">{action.title}</h4>
+        <div className="flex items-center gap-1 flex-wrap">
+          {channel && (
+            <span
+              className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: `${channel.colorHex}15`, color: channel.colorHex }}
+            >
+              {channel.label}
+            </span>
+          )}
+          <Tag variant={action.priority}>{priority.label}</Tag>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-2 hover:border-primary/30 transition-colors">
