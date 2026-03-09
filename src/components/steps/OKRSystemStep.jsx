@@ -3,6 +3,15 @@ import { TEAM_CONFIG, TEAMS } from "../../data/config"
 import KRRow from "../ui/kr-row"
 import Tag from "../ui/tag-custom"
 import { Button } from "@/components/ui/button"
+import {
+  ArrowLeft,
+  RotateCcw,
+  Link2,
+  FileSpreadsheet,
+  FileText,
+  Copy,
+  Check,
+} from "lucide-react"
 
 const SUMMARY_ITEMS = [
   { label: "Revenue target", targetKey: "revenue", colorHex: "#8B5CF6", gradientTo: "#C084FC" },
@@ -191,26 +200,92 @@ export default function OKRSystemStep({
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-4">
-        <Button variant="ghost" onClick={onBack}>
-          &larr; Back
-        </Button>
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" onClick={onReset}>
-            &larr; Start over
-          </Button>
-          <Button variant="outline" onClick={onShare}>
-            {shared ? "Copied!" : "Share"}
-          </Button>
-          <Button variant="outline" onClick={onCopyNotion}>
-            {notionCopied ? "Copied!" : "Copy for Notion"}
-          </Button>
-          <Button variant="outline" onClick={onExportExcel}>
-            Export Excel
-          </Button>
-          <Button onClick={onExportPDF}>
-            Export PDF
-          </Button>
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4 glass-card">
+        <div className="flex items-center justify-between">
+          <p className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">
+            Export &amp; Share
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onBack}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <ArrowLeft className="w-3 h-3" />
+              Back
+            </button>
+            <span className="text-border">|</span>
+            <button
+              onClick={onReset}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Start over
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <button
+            onClick={onExportExcel}
+            className="group flex flex-col items-center gap-2 rounded-lg border-2 border-transparent bg-emerald-50 hover:border-emerald-300 p-4 transition-all cursor-pointer"
+          >
+            <div className="w-10 h-10 rounded-full bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition-colors">
+              <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+            </div>
+            <span className="text-sm font-semibold text-emerald-700">Excel</span>
+            <span className="text-[10px] text-emerald-600/70 leading-tight text-center">
+              Full workbook with funnel, OKRs &amp; coherence
+            </span>
+          </button>
+
+          <button
+            onClick={onExportPDF}
+            className="group flex flex-col items-center gap-2 rounded-lg border-2 border-transparent bg-violet-50 hover:border-violet-300 p-4 transition-all cursor-pointer"
+          >
+            <div className="w-10 h-10 rounded-full bg-violet-100 group-hover:bg-violet-200 flex items-center justify-center transition-colors">
+              <FileText className="w-5 h-5 text-violet-600" />
+            </div>
+            <span className="text-sm font-semibold text-violet-700">PDF</span>
+            <span className="text-[10px] text-violet-600/70 leading-tight text-center">
+              One-page summary for leadership review
+            </span>
+          </button>
+
+          <button
+            onClick={onCopyNotion}
+            className="group flex flex-col items-center gap-2 rounded-lg border-2 border-transparent bg-gray-50 hover:border-gray-300 p-4 transition-all cursor-pointer"
+          >
+            <div className="w-10 h-10 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
+              {notionCopied
+                ? <Check className="w-5 h-5 text-emerald-600" />
+                : <Copy className="w-5 h-5 text-gray-600" />
+              }
+            </div>
+            <span className="text-sm font-semibold text-gray-700">
+              {notionCopied ? "Copied!" : "Notion"}
+            </span>
+            <span className="text-[10px] text-gray-500 leading-tight text-center">
+              Markdown tables ready to paste
+            </span>
+          </button>
+
+          <button
+            onClick={onShare}
+            className="group flex flex-col items-center gap-2 rounded-lg border-2 border-transparent bg-blue-50 hover:border-blue-300 p-4 transition-all cursor-pointer"
+          >
+            <div className="w-10 h-10 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center transition-colors">
+              {shared
+                ? <Check className="w-5 h-5 text-emerald-600" />
+                : <Link2 className="w-5 h-5 text-blue-600" />
+              }
+            </div>
+            <span className="text-sm font-semibold text-blue-700">
+              {shared ? "Copied!" : "Share link"}
+            </span>
+            <span className="text-[10px] text-blue-600/70 leading-tight text-center">
+              Shareable URL with your full config
+            </span>
+          </button>
         </div>
       </div>
     </div>
