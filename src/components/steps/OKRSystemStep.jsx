@@ -1,13 +1,14 @@
 import { OBJECTIVES } from "../../data/objectives"
 import { TEAM_CONFIG, TEAMS } from "../../data/config"
-import KRRow from "../ui/KRRow"
-import Tag from "../ui/Tag"
+import KRRow from "../ui/kr-row"
+import Tag from "../ui/tag-custom"
+import { Button } from "@/components/ui/button"
 
 const SUMMARY_ITEMS = [
-  { label: "Revenue target", targetKey: "revenue", colorHex: "#4A235A" },
-  { label: "Deals needed", calcKey: "deals", colorHex: "#1B4F8A" },
-  { label: "Demos needed", calcKey: "demos", colorHex: "#4A235A" },
-  { label: "MQL target", calcKey: "mqls", colorHex: "#C0392B" },
+  { label: "Revenue target", targetKey: "revenue", colorHex: "#8B5CF6", gradientTo: "#C084FC" },
+  { label: "Deals needed", calcKey: "deals", colorHex: "#3B82F6", gradientTo: "#60A5FA" },
+  { label: "Demos needed", calcKey: "demos", colorHex: "#8B5CF6", gradientTo: "#C084FC" },
+  { label: "MQL target", calcKey: "mqls", colorHex: "#EF4444", gradientTo: "#F87171" },
 ]
 
 const NEXT_STEPS = [
@@ -51,8 +52,8 @@ export default function OKRSystemStep({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-3xl text-text">{title}</h2>
-        <p className="text-muted mt-2">
+        <h2 className="font-sans font-bold text-3xl gradient-heading">{title}</h2>
+        <p className="text-muted-foreground mt-2">
           {totalSelected} objective{totalSelected !== 1 ? "s" : ""} selected
         </p>
       </div>
@@ -61,14 +62,20 @@ export default function OKRSystemStep({
         {summaryValues.map((item) => (
           <div
             key={item.label}
-            className="bg-white rounded-lg border border-border p-4"
+            className="rounded-lg p-4 gradient-border"
+            style={{ "--gb-from": item.colorHex, "--gb-to": `${item.colorHex}40` }}
           >
-            <p className="text-xs uppercase tracking-wide text-muted">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
               {item.label}
             </p>
             <p
               className="text-2xl font-extrabold font-mono mt-1"
-              style={{ color: item.colorHex }}
+              style={{
+                background: `linear-gradient(135deg, ${item.colorHex}, ${item.gradientTo})`,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
             >
               {item.val}
             </p>
@@ -77,17 +84,13 @@ export default function OKRSystemStep({
       </div>
 
       {totalSelected === 0 && (
-        <div className="bg-white rounded-xl border border-border p-8 text-center">
-          <p className="text-muted mb-4">
+        <div className="bg-card rounded-xl border border-border p-8 text-center">
+          <p className="text-muted-foreground mb-4">
             No objectives selected yet. Go back to select your OKRs.
           </p>
-          <button
-            type="button"
-            onClick={onReset}
-            className="bg-accent text-white px-5 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
+          <Button onClick={onReset}>
             Go to Step 1
-          </button>
+          </Button>
         </div>
       )}
 
@@ -103,10 +106,10 @@ export default function OKRSystemStep({
         return (
           <div key={team} className="space-y-4">
             <div
-              className="rounded-lg px-5 py-3"
-              style={{ backgroundColor: cfg.colorHex }}
+              className="rounded-lg px-5 py-3 shadow-lg shadow-black/20"
+              style={{ background: `linear-gradient(135deg, ${cfg.colorHex}, ${cfg.colorHex}88)` }}
             >
-              <h3 className="font-display text-white text-lg">{cfg.label}</h3>
+              <h3 className="font-sans font-bold text-white text-lg">{cfg.label}</h3>
             </div>
 
             {selectedObjs.map((obj) => (
@@ -122,27 +125,27 @@ export default function OKRSystemStep({
                     >
                       {obj.id}
                     </span>
-                    <span className="font-bold text-sm text-text">
+                    <span className="font-bold text-sm text-foreground">
                       {obj.title}
                     </span>
                   </div>
                 </div>
 
-                <div className="border border-border rounded-b-lg overflow-hidden">
-                  <div className="grid grid-cols-[40px_36px_1fr_160px_80px] px-5 py-2 bg-gray-100">
-                    <span className="text-[10px] uppercase font-semibold text-muted">
+                <div className="border border-border rounded-b-lg overflow-x-auto glass-card">
+                  <div className="grid grid-cols-[40px_36px_1fr_160px_80px] px-5 py-2 bg-muted">
+                    <span className="text-[10px] uppercase font-semibold text-muted-foreground">
                       #
                     </span>
-                    <span className="text-[10px] uppercase font-semibold text-muted">
+                    <span className="text-[10px] uppercase font-semibold text-muted-foreground">
                       ID
                     </span>
-                    <span className="text-[10px] uppercase font-semibold text-muted">
+                    <span className="text-[10px] uppercase font-semibold text-muted-foreground">
                       Key Result
                     </span>
-                    <span className="text-[10px] uppercase font-semibold text-muted text-center">
+                    <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
                       Target
                     </span>
-                    <span className="text-[10px] uppercase font-semibold text-muted text-right">
+                    <span className="text-[10px] uppercase font-semibold text-muted-foreground text-right">
                       Type
                     </span>
                   </div>
@@ -170,12 +173,12 @@ export default function OKRSystemStep({
       })}
 
       {totalSelected > 0 && (
-        <div className="bg-accent-light rounded-xl p-5 space-y-3">
-          <h3 className="font-display text-lg text-text">Next steps</h3>
+        <div className="bg-primary/10 rounded-xl p-5 space-y-3 glass-card border-primary/20">
+          <h3 className="font-sans font-bold text-lg text-foreground">Next steps</h3>
           <ol className="space-y-2">
             {NEXT_STEPS.map((step, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm text-text">
-                <span className="font-mono font-bold text-accent shrink-0">
+              <li key={i} className="flex items-start gap-3 text-sm text-foreground">
+                <span className="font-mono font-bold text-primary shrink-0">
                   {i + 1}.
                 </span>
                 <span>{step}</span>
@@ -186,35 +189,19 @@ export default function OKRSystemStep({
       )}
 
       <div className="flex items-center justify-between pt-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-sm text-muted hover:text-text transition-colors"
-        >
+        <Button variant="ghost" onClick={onBack}>
           &larr; Back
-        </button>
+        </Button>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onReset}
-            className="text-sm text-muted hover:text-text transition-colors"
-          >
+          <Button variant="ghost" onClick={onReset}>
             &larr; Start over
-          </button>
-          <button
-            type="button"
-            onClick={onShare}
-            className="border border-accent text-accent px-4 py-2 rounded-lg text-sm font-semibold hover:bg-accent-light transition-colors"
-          >
+          </Button>
+          <Button variant="outline" onClick={onShare}>
             {shared ? "Copied!" : "Share"}
-          </button>
-          <button
-            type="button"
-            onClick={onExportPDF}
-            className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
+          </Button>
+          <Button onClick={onExportPDF}>
             Export PDF
-          </button>
+          </Button>
         </div>
       </div>
     </div>

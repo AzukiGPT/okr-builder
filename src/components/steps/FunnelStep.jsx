@@ -1,4 +1,5 @@
-import FunnelBar from "../ui/FunnelBar"
+import FunnelBar from "../ui/funnel-bar"
+import { Button } from "@/components/ui/button"
 
 const SALES_INPUTS = [
   { key: "target", label: "Annual revenue target (new ARR)", prefix: "\u20AC", step: 100000 },
@@ -15,11 +16,11 @@ const MKT_INPUTS = [
 ]
 
 const FUNNEL_ROWS = [
-  { label: "\uD83C\uDFC6 Deals to close", key: "deals", colorHex: "#1B4F8A" },
-  { label: "\uD83D\uDCC4 Proposals to send", key: "proposals", colorHex: "#1B4F8A" },
-  { label: "\uD83D\uDCBB Demos to run", key: "demos", colorHex: "#4A235A" },
-  { label: "\uD83E\uDD1D Qualification meetings", key: "meetings", colorHex: "#4A235A" },
-  { label: "\uD83D\uDCDE Outbound calls", key: "calls", colorHex: "#C0392B" },
+  { label: "\uD83C\uDFC6 Deals to close", key: "deals", colorHex: "#3B82F6" },
+  { label: "\uD83D\uDCC4 Proposals to send", key: "proposals", colorHex: "#3B82F6" },
+  { label: "\uD83D\uDCBB Demos to run", key: "demos", colorHex: "#8B5CF6" },
+  { label: "\uD83E\uDD1D Qualification meetings", key: "meetings", colorHex: "#8B5CF6" },
+  { label: "\uD83D\uDCDE Outbound calls", key: "calls", colorHex: "#EF4444" },
 ]
 
 function FunnelInput({ inputDef, value, onChange, borderColor }) {
@@ -27,9 +28,9 @@ function FunnelInput({ inputDef, value, onChange, borderColor }) {
 
   return (
     <div className="mb-3">
-      <label className="text-xs text-muted block mb-1">{label}</label>
+      <label className="text-xs text-muted-foreground block mb-1">{label}</label>
       <div
-        className="flex items-center bg-white border-2 rounded-lg overflow-hidden"
+        className="flex items-center bg-card border-2 rounded-lg overflow-hidden"
         style={{ borderColor }}
       >
         {prefix && (
@@ -42,7 +43,7 @@ function FunnelInput({ inputDef, value, onChange, borderColor }) {
           value={value}
           step={step}
           onChange={(e) => onChange(key, parseFloat(e.target.value) || 0)}
-          className="flex-1 border-none p-3 text-lg font-bold font-mono bg-transparent outline-none"
+          className="flex-1 border-none p-3 text-lg font-bold font-mono bg-transparent outline-none text-foreground"
           style={{ color: borderColor }}
         />
         {suffix && (
@@ -69,17 +70,17 @@ export default function FunnelStep({ funnel, setFunnel, calc, onNext, onBack }) 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-3xl text-text">
+        <h2 className="font-sans font-bold text-3xl gradient-heading">
           Funnel math
         </h2>
-        <p className="text-muted mt-2">
+        <p className="text-muted-foreground mt-2">
           Model your revenue engine to derive activity targets.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-4">
-          <p className="uppercase text-xs font-semibold tracking-wide text-muted">
+          <p className="uppercase text-xs font-semibold tracking-wide text-muted-foreground">
             Revenue model inputs
           </p>
           {SALES_INPUTS.map((inp) => (
@@ -88,13 +89,13 @@ export default function FunnelStep({ funnel, setFunnel, calc, onNext, onBack }) 
               inputDef={inp}
               value={funnel[inp.key]}
               onChange={setFunnel}
-              borderColor="#4A235A"
+              borderColor="#8B5CF6"
             />
           ))}
 
           <hr className="border-border" />
 
-          <p className="uppercase text-xs font-semibold tracking-wide text-mkt">
+          <p className="uppercase text-xs font-semibold tracking-wide text-muted-foreground">
             Marketing assumptions
           </p>
           {MKT_INPUTS.map((inp) => (
@@ -103,17 +104,17 @@ export default function FunnelStep({ funnel, setFunnel, calc, onNext, onBack }) 
               inputDef={inp}
               value={funnel[inp.key]}
               onChange={setFunnel}
-              borderColor="#C0392B"
+              borderColor="#EF4444"
             />
           ))}
         </div>
 
         <div className="space-y-6">
-          <p className="uppercase text-xs font-semibold tracking-wide text-muted">
+          <p className="uppercase text-xs font-semibold tracking-wide text-muted-foreground">
             Annual volumes required
           </p>
 
-          <div className="bg-white rounded-xl border border-border p-5 space-y-5">
+          <div className="bg-card rounded-xl border border-border p-5 space-y-5 glass-card">
             {FUNNEL_ROWS.map((row) => (
               <FunnelBar
                 key={row.key}
@@ -129,34 +130,34 @@ export default function FunnelStep({ funnel, setFunnel, calc, onNext, onBack }) 
 
           <hr className="border-border" />
 
-          <p className="uppercase text-xs font-semibold tracking-wide text-mkt">
+          <p className="uppercase text-xs font-semibold tracking-wide text-muted-foreground">
             Marketing derived targets
           </p>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white rounded-lg border border-border p-4">
-              <p className="text-xs text-muted uppercase tracking-wide">
+            <div className="bg-card rounded-lg border border-border p-4 glass-card">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
                 Annual MQL target
               </p>
-              <p className="text-2xl font-extrabold font-mono text-mkt mt-1">
+              <p className="text-2xl font-extrabold font-mono mt-1" style={{ color: "#EF4444" }}>
                 {calc.mqls.toLocaleString()}
               </p>
             </div>
-            <div className="bg-white rounded-lg border border-border p-4">
-              <p className="text-xs text-muted uppercase tracking-wide">
+            <div className="bg-card rounded-lg border border-border p-4 glass-card">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
                 MQLs per month
               </p>
-              <p className="text-2xl font-extrabold font-mono text-mkt mt-1">
+              <p className="text-2xl font-extrabold font-mono mt-1" style={{ color: "#EF4444" }}>
                 {calc.monthly.mqls.toLocaleString()}
               </p>
             </div>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <p className="text-sm font-semibold text-amber-900">
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 shadow-[0_0_20px_-5px_oklch(0.7_0.15_85_/_0.15)]">
+            <p className="text-sm font-semibold text-amber-400">
               Key insight
             </p>
-            <p className="text-sm text-amber-800 mt-1">
+            <p className="text-sm text-amber-300 mt-1">
               {demosSaved > 0
                 ? `A +5% win rate improvement (${funnel.winRate}% \u2192 ${funnel.winRate + 5}%) would save ${demosSaved} demos per year, reducing pressure on pipeline generation.`
                 : `Increasing win rate from ${funnel.winRate}% to ${funnel.winRate + 5}% would reduce demos needed from ${calc.demos} to ${improvedDemos}.`}
@@ -166,20 +167,12 @@ export default function FunnelStep({ funnel, setFunnel, calc, onNext, onBack }) 
       </div>
 
       <div className="flex items-center justify-between pt-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-sm text-muted hover:text-text transition-colors"
-        >
+        <Button variant="ghost" onClick={onBack}>
           &larr; Back
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
-          className="bg-accent text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
-        >
+        </Button>
+        <Button onClick={onNext}>
           Next &rarr;
-        </button>
+        </Button>
       </div>
     </div>
   )

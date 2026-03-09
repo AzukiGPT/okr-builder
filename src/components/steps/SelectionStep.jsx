@@ -1,8 +1,9 @@
 import { OBJECTIVES } from "../../data/objectives"
 import { TEAM_CONFIG, STAGE_CODES, BOTTLENECK_CODES, TEAMS } from "../../data/config"
 import { scoreObj, getRecommendationLabel } from "../../utils/scoring"
-import ObjectiveCard from "../ui/ObjectiveCard"
-import Tag from "../ui/Tag"
+import ObjectiveCard from "../ui/objective-card"
+import Tag from "../ui/tag-custom"
+import { Button } from "@/components/ui/button"
 
 function sortByRecommendation(objectives, stageCode, btlnkCode) {
   return [...objectives].sort((a, b) => {
@@ -19,11 +20,11 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-3xl text-text">
+        <h2 className="font-sans font-bold text-3xl gradient-heading">
           Select your objectives
         </h2>
-        <p className="text-muted mt-2">
-          Maximum <strong>3 per team</strong>. &#9733; Recommended objectives
+        <p className="text-muted-foreground mt-2">
+          Maximum <strong>5 per team</strong>. &#9733; Recommended objectives
           match your context.
         </p>
       </div>
@@ -36,7 +37,8 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
           return (
             <div
               key={team}
-              className="bg-white rounded-xl p-4 border border-border"
+              className="rounded-xl p-4 gradient-border"
+              style={{ "--gb-from": cfg.colorHex, "--gb-to": `${cfg.colorHex}40` }}
             >
               <p
                 className="text-xs font-semibold uppercase tracking-wide"
@@ -44,8 +46,8 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
               >
                 {cfg.label}
               </p>
-              <p className="font-mono text-2xl font-extrabold text-text mt-1">
-                {count} / 3
+              <p className="font-mono text-2xl font-extrabold text-foreground mt-1">
+                {count} / 5
               </p>
               {count === 3 && (
                 <div className="mt-2">
@@ -70,8 +72,8 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
                 className="w-1 h-8 rounded-full"
                 style={{ backgroundColor: cfg.colorHex }}
               />
-              <h3 className="font-display text-xl text-text">{cfg.label}</h3>
-              {count >= 3 && <Tag variant="warning">Max 3 selected</Tag>}
+              <h3 className="font-sans font-bold text-xl text-foreground">{cfg.label}</h3>
+              {count >= 5 && <Tag variant="warning">Max 5 selected</Tag>}
             </div>
 
             <div className="space-y-2">
@@ -85,7 +87,7 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
                     objective={obj}
                     isSelected={selected[team].includes(obj.id)}
                     isDisabled={
-                      !selected[team].includes(obj.id) && count >= 3
+                      !selected[team].includes(obj.id) && count >= 5
                     }
                     recommendation={recommendation}
                     teamConfig={cfg}
@@ -99,20 +101,12 @@ export default function SelectionStep({ ctx, selected, toggleObjective, onNext, 
       })}
 
       <div className="flex items-center justify-between pt-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-sm text-muted hover:text-text transition-colors"
-        >
+        <Button variant="ghost" onClick={onBack}>
           &larr; Back
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
-          className="bg-accent text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
-        >
+        </Button>
+        <Button onClick={onNext}>
           Next &rarr;
-        </button>
+        </Button>
       </div>
     </div>
   )

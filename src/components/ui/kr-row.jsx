@@ -1,4 +1,4 @@
-import Tag from "./Tag"
+import Tag from "./tag-custom"
 
 export default function KRRow({
   kr,
@@ -9,7 +9,7 @@ export default function KRRow({
   onTargetChange,
 }) {
   const { colorHex } = teamConfig
-  const rowBg = index % 2 === 0 ? "bg-gray-50" : "bg-white"
+  const rowBg = index % 2 === 0 ? "bg-card/50" : "bg-card"
   const tagVariant = kr.type === "Leading" ? "leading" : "lagging"
   const displayValue = customTarget ?? suggestedTarget ?? ""
 
@@ -25,14 +25,14 @@ export default function KRRow({
       >
         {index + 1}
       </span>
-      <span className="font-mono text-[10px] text-muted">{kr.id}</span>
-      <span className="text-sm text-text">{kr.text}</span>
+      <span className="font-mono text-[10px] text-muted-foreground">{kr.id}</span>
+      <span className="text-sm text-foreground">{kr.text}</span>
       <input
         type="text"
         value={displayValue}
         onChange={handleChange}
-        className="w-full px-2 py-1 border rounded text-xs font-mono text-center focus:outline-none focus:ring-1"
-        style={{ borderColor: colorHex }}
+        className="w-full px-2 py-1 border rounded text-xs font-mono text-center bg-background border-border text-foreground focus:outline-none focus:ring-1"
+        style={{ "--tw-ring-color": colorHex }}
       />
       <div className="flex justify-end">
         <Tag variant={tagVariant}>{kr.type}</Tag>

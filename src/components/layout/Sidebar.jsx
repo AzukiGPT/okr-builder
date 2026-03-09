@@ -5,34 +5,36 @@ const STEPS = [
   { label: "System", icon: "4" },
 ]
 
-function StepButton({ step, index, currentStep, onClick }) {
+function StepButton({ step, index, currentStep, maxStep, onClick }) {
   const isDone = index < currentStep
   const isActive = index === currentStep
-  const isClickable = index <= currentStep
+  const isClickable = index <= maxStep
 
   const circleClass = isDone
-    ? "bg-csm"
+    ? "bg-emerald-500"
     : isActive
-      ? "bg-accent"
-      : "bg-white/20"
+      ? "bg-primary"
+      : "bg-sidebar-accent/50"
 
   const labelClass = isActive
-    ? "text-white font-bold"
+    ? "text-sidebar-foreground font-bold"
     : isDone
-      ? "text-white/80"
-      : "text-white/40"
+      ? "text-sidebar-foreground/80"
+      : "text-sidebar-foreground/40"
 
   return (
     <button
       type="button"
       disabled={!isClickable}
       onClick={() => onClick(index)}
-      className={`flex items-center gap-3 w-full px-4 py-2 rounded-lg transition-colors ${
-        isClickable ? "hover:bg-white/10 cursor-pointer" : "cursor-default"
+      className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-all ${
+        isActive ? "bg-primary/10 border border-primary/20" : "border border-transparent"
+      } ${
+        isClickable && !isActive ? "hover:bg-sidebar-accent cursor-pointer" : isClickable ? "cursor-pointer" : "cursor-default"
       }`}
     >
       <span
-        className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-mono font-bold text-white shrink-0 ${circleClass}`}
+        className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-mono font-bold text-white shrink-0 ${circleClass}${isActive ? " glow-sm" : ""}`}
       >
         {isDone ? "\u2713" : step.icon}
       </span>
@@ -46,28 +48,28 @@ function MiniRecap({ ctx, selected, onReset, onShare, shared }) {
     selected.sales.length + selected.marketing.length + selected.csm.length
 
   return (
-    <div className="bg-white/10 rounded-lg p-3 space-y-2">
-      <p className="text-white/60 text-xs font-mono tracking-wide">RECAP</p>
+    <div className="bg-sidebar-accent rounded-lg p-3 space-y-2 glass-card">
+      <p className="text-sidebar-foreground/60 text-xs font-mono tracking-wide">RECAP</p>
       {ctx.stage && (
-        <p className="text-white text-xs">
-          <span className="text-white/60">Stage:</span> {ctx.stage}
+        <p className="text-sidebar-foreground text-xs">
+          <span className="text-sidebar-foreground/60">Stage:</span> {ctx.stage}
         </p>
       )}
       {ctx.bottleneck && (
-        <p className="text-white text-xs">
-          <span className="text-white/60">Focus:</span> {ctx.bottleneck}
+        <p className="text-sidebar-foreground text-xs">
+          <span className="text-sidebar-foreground/60">Focus:</span> {ctx.bottleneck}
         </p>
       )}
       {totalSelected > 0 && (
-        <p className="text-white text-xs">
-          <span className="text-white/60">Objectives:</span> {totalSelected}
+        <p className="text-sidebar-foreground text-xs">
+          <span className="text-sidebar-foreground/60">Objectives:</span> {totalSelected}
         </p>
       )}
       <div className="flex gap-2 pt-1">
         <button
           type="button"
           onClick={onReset}
-          className="text-[11px] text-white/60 hover:text-white transition-colors"
+          className="text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
         >
           Reset
         </button>
@@ -75,7 +77,7 @@ function MiniRecap({ ctx, selected, onReset, onShare, shared }) {
           <button
             type="button"
             onClick={onShare}
-            className="text-[11px] text-white/60 hover:text-white transition-colors"
+            className="text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
           >
             {shared ? "Copied!" : "Share"}
           </button>
@@ -87,6 +89,7 @@ function MiniRecap({ ctx, selected, onReset, onShare, shared }) {
 
 export default function Sidebar({
   step,
+  maxStep,
   setStep,
   ctx,
   selected,
@@ -97,19 +100,19 @@ export default function Sidebar({
 }) {
   if (mobile) {
     return (
-      <nav className="w-full bg-chrome px-4 py-3 flex items-center gap-2">
-        <span className="font-display text-white text-lg mr-4">OKR Builder</span>
+      <nav className="w-full bg-sidebar border-b border-sidebar-border px-4 py-3 flex items-center gap-2 shadow-lg shadow-black/30">
+        <span className="font-sans font-bold text-sidebar-foreground text-lg mr-4">OKR Builder</span>
         <div className="flex items-center gap-1">
           {STEPS.map((s, i) => {
             const isDone = i < step
             const isActive = i === step
-            const isClickable = i <= step
+            const isClickable = i <= maxStep
 
             const circleClass = isDone
-              ? "bg-csm"
+              ? "bg-emerald-500"
               : isActive
-                ? "bg-accent"
-                : "bg-white/20"
+                ? "bg-primary"
+                : "bg-sidebar-accent/50"
 
             return (
               <button
@@ -131,21 +134,24 @@ export default function Sidebar({
   }
 
   return (
-    <nav className="w-56 h-screen sticky top-0 bg-chrome flex flex-col">
+    <nav className="w-56 h-screen sticky top-0 border-r border-sidebar-border/50 flex flex-col" style={{ background: 'linear-gradient(180deg, oklch(0.13 0.015 280), oklch(0.09 0.008 280))' }}>
       <div className="px-5 pt-6 pb-4">
-        <h1 className="font-display text-white text-xl">OKR Builder</h1>
+        <h1 className="font-sans font-bold text-xl gradient-heading">OKR Builder</h1>
         {ctx.company && (
-          <p className="text-white/40 text-xs mt-1 truncate">{ctx.company}</p>
+          <p className="text-sidebar-foreground/40 text-xs mt-1 truncate">{ctx.company}</p>
         )}
       </div>
 
-      <div className="flex-1 flex flex-col gap-1 px-2 py-2">
+      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
+
+      <div className="flex-1 flex flex-col gap-1 px-2 py-3">
         {STEPS.map((s, i) => (
           <StepButton
             key={s.label}
             step={s}
             index={i}
             currentStep={step}
+            maxStep={maxStep}
             onClick={setStep}
           />
         ))}

@@ -18,19 +18,19 @@ export const TEAM_CONFIG = {
     key: "sales",
     label: "Sales",
     color: "sales",
-    colorHex: "#1B4F8A",
+    colorHex: "#3B82F6",
   },
   marketing: {
     key: "marketing",
     label: "Marketing",
     color: "mkt",
-    colorHex: "#C0392B",
+    colorHex: "#EF4444",
   },
   csm: {
     key: "csm",
     label: "Customer Success",
     color: "csm",
-    colorHex: "#1A7A4A",
+    colorHex: "#22C55E",
   },
 }
 

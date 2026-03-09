@@ -19,6 +19,7 @@ export default function App() {
   return (
     <AppShell
       step={state.step}
+      maxStep={state.maxStep}
       setStep={setStep}
       ctx={state.ctx}
       selected={state.selected}

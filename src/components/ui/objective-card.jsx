@@ -1,4 +1,5 @@
-import Tag from "./Tag"
+import Tag from "./tag-custom"
+import { cn } from "@/lib/utils"
 
 export default function ObjectiveCard({
   objective,
@@ -25,28 +26,31 @@ export default function ObjectiveCard({
 
   const isRecommended = recommendation === "recommended" && !isSelected
 
-  const outerClasses = [
+  const outerClasses = cn(
     "flex items-start gap-3 p-4 rounded-lg border transition-all duration-150",
     isDisabled
       ? "opacity-40 cursor-not-allowed"
       : "cursor-pointer",
-    !isDisabled && "hover:shadow-md hover:-translate-y-px",
-  ]
-    .filter(Boolean)
-    .join(" ")
+    !isDisabled && "hover:bg-accent/50 hover:border-primary/30"
+  )
 
   const borderStyle = {
     borderLeftWidth: isSelected || isRecommended ? "3px" : undefined,
     borderLeftColor: isSelected
       ? colorHex
       : isRecommended
-        ? "#4A235A"
+        ? "#8B5CF6"
         : undefined,
     backgroundColor: isSelected
       ? `${colorHex}10`
       : isRecommended
-        ? "#EDE0F508"
+        ? `${colorHex}08`
         : undefined,
+    backdropFilter: "blur(8px)",
+    WebkitBackdropFilter: "blur(8px)",
+    boxShadow: isSelected
+      ? `0 0 20px -5px ${colorHex}30, 0 4px 24px -4px oklch(0 0 0 / 0.2)`
+      : "0 4px 24px -4px oklch(0 0 0 / 0.2)",
   }
 
   return (
@@ -62,7 +66,7 @@ export default function ObjectiveCard({
         className="flex items-center justify-center w-5 h-5 rounded shrink-0 mt-0.5 text-[11px] font-bold text-white"
         style={{
           backgroundColor: isSelected ? colorHex : "transparent",
-          border: isSelected ? "none" : "2px solid #E8E8E8",
+          border: isSelected ? "none" : "2px solid hsl(240 4% 20%)",
           color: isSelected ? "#FFFFFF" : "transparent",
         }}
       >
@@ -77,14 +81,14 @@ export default function ObjectiveCard({
           >
             {objective.id}
           </span>
-          <span className="font-semibold text-sm text-text">
+          <span className="font-semibold text-sm text-foreground">
             {objective.title}
           </span>
           {recommendation && recommendation !== "none" && (
             <Tag variant={recommendation}>{recommendation}</Tag>
           )}
         </div>
-        <p className="text-xs italic text-muted mt-1">{objective.when}</p>
+        <p className="text-xs italic text-muted-foreground mt-1">{objective.when}</p>
         {isSelected && (
           <div className="flex flex-wrap gap-1 mt-2">
             {objective.krs.map((kr) => (
@@ -103,7 +107,7 @@ export default function ObjectiveCard({
         )}
       </div>
 
-      <span className="font-mono text-xs text-muted shrink-0 mt-0.5">
+      <span className="font-mono text-xs text-muted-foreground shrink-0 mt-0.5">
         {krCount} KRs
       </span>
     </div>

@@ -4,7 +4,7 @@ export default function FunnelBar({ label, value, max, colorHex, weekly, daily }
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-sm font-semibold text-text">{label}</span>
+        <span className="text-sm font-semibold text-foreground">{label}</span>
         <div className="flex items-baseline gap-2">
           <span
             className="text-2xl font-extrabold font-mono"
@@ -13,7 +13,7 @@ export default function FunnelBar({ label, value, max, colorHex, weekly, daily }
             {value}
           </span>
           {(weekly !== undefined || daily !== undefined) && (
-            <span className="text-xs text-muted">
+            <span className="text-xs text-muted-foreground">
               {weekly !== undefined && `${weekly}/wk`}
               {weekly !== undefined && daily !== undefined && " \u00B7 "}
               {daily !== undefined && `${daily}/day`}
@@ -21,12 +21,13 @@ export default function FunnelBar({ label, value, max, colorHex, weekly, daily }
           )}
         </div>
       </div>
-      <div className="h-1.5 bg-border rounded-full overflow-hidden">
+      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500 ease-out"
           style={{
             width: `${fillPercent}%`,
             backgroundColor: colorHex,
+            boxShadow: `0 0 8px -2px ${colorHex}60`,
           }}
         />
       </div>

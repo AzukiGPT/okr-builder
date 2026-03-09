@@ -41,7 +41,7 @@ function drawTitlePage(doc, ctx, calc) {
 
   doc.setFontSize(11)
   doc.setFont("helvetica", "bold")
-  doc.setTextColor("#4A235A")
+  doc.setTextColor("#8B5CF6")
   doc.text("Summary", MARGIN, y)
   y += 8
 
@@ -120,7 +120,7 @@ function drawTeamSection(doc, team, selected, calc, customTargets) {
       doc.text(krLines, MARGIN + 8, y)
       doc.setTextColor(tc.colorHex)
       doc.text(target, MARGIN + CONTENT_WIDTH - 55, y)
-      doc.setTextColor(kr.type === "Leading" ? "#1A7A4A" : "#1B4F8A")
+      doc.setTextColor(kr.type === "Leading" ? "#22C55E" : "#3B82F6")
       doc.text(kr.type, MARGIN + CONTENT_WIDTH - 15, y)
       y += krLines.length * 4 + 3
     })
@@ -135,7 +135,7 @@ function drawFunnelPage(doc, calc) {
 
   doc.setFont("helvetica", "bold")
   doc.setFontSize(14)
-  doc.setTextColor("#4A235A")
+  doc.setTextColor("#8B5CF6")
   doc.text("Funnel Math", MARGIN, y + 7)
   y += 16
 

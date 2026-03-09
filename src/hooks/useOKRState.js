@@ -3,6 +3,7 @@ import { loadState, saveState } from "../utils/storage"
 
 const INITIAL_STATE = {
   step: 0,
+  maxStep: 0,
   ctx: {
     company: "",
     arr: "",
@@ -29,7 +30,11 @@ const INITIAL_STATE = {
 function reducer(state, action) {
   switch (action.type) {
     case "SET_STEP":
-      return { ...state, step: action.payload }
+      return {
+        ...state,
+        step: action.payload,
+        maxStep: Math.max(state.maxStep, action.payload),
+      }
     case "SET_CTX":
       return { ...state, ctx: { ...state.ctx, [action.key]: action.value } }
     case "TOGGLE_OBJECTIVE": {
@@ -37,7 +42,7 @@ function reducer(state, action) {
       const cur = state.selected[team]
       const next = cur.includes(id)
         ? cur.filter(x => x !== id)
-        : cur.length >= 3
+        : cur.length >= 5
           ? cur
           : [...cur, id]
       return { ...state, selected: { ...state.selected, [team]: next } }

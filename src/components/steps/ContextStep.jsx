@@ -1,12 +1,14 @@
 import { STAGES, BOTTLENECKS } from "../../data/config"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 function RadioGroup({ label, options, value, onChange, selectedBorderColor }) {
   return (
     <div
-      className="bg-white rounded-xl p-5 border-2 transition-colors"
-      style={{ borderColor: value ? selectedBorderColor : "#E8E8E8" }}
+      className="bg-card rounded-xl p-5 border-2 transition-colors glass-card"
+      style={{ borderColor: value ? selectedBorderColor : "hsl(240 4% 20%)" }}
     >
-      <p className="uppercase text-xs font-semibold tracking-wide text-muted mb-3">
+      <p className="uppercase text-xs font-semibold tracking-wide text-muted-foreground mb-3">
         {label}
       </p>
       <div className="space-y-2">
@@ -25,7 +27,7 @@ function RadioGroup({ label, options, value, onChange, selectedBorderColor }) {
                 style={{
                   width: 18,
                   height: 18,
-                  border: isSelected ? "none" : "2px solid #CCCCCC",
+                  border: isSelected ? "none" : "2px solid hsl(240 4% 20%)",
                   backgroundColor: isSelected ? selectedBorderColor : "transparent",
                 }}
               >
@@ -37,9 +39,12 @@ function RadioGroup({ label, options, value, onChange, selectedBorderColor }) {
                 )}
               </span>
               <span
-                className={`text-sm ${
-                  isSelected ? "font-semibold text-text" : "text-muted group-hover:text-text"
-                } transition-colors`}
+                className={cn(
+                  "text-sm transition-colors",
+                  isSelected
+                    ? "font-semibold text-foreground"
+                    : "text-muted-foreground group-hover:text-foreground"
+                )}
               >
                 {opt}
               </span>
@@ -53,8 +58,8 @@ function RadioGroup({ label, options, value, onChange, selectedBorderColor }) {
 
 function TextInputCard({ label, value, placeholder, onChange }) {
   return (
-    <div className="bg-white rounded-xl p-5 border border-border">
-      <label className="uppercase text-xs font-semibold tracking-wide text-muted block mb-2">
+    <div className="bg-card rounded-xl p-5 border border-border glass-card">
+      <label className="uppercase text-xs font-semibold tracking-wide text-muted-foreground block mb-2">
         {label}
       </label>
       <input
@@ -62,7 +67,7 @@ function TextInputCard({ label, value, placeholder, onChange }) {
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border-b-2 border-border bg-transparent text-sm font-semibold text-text outline-none focus:border-accent transition-colors py-1"
+        className="w-full border-b-2 border-border bg-transparent text-sm font-semibold text-foreground outline-none focus:border-primary transition-colors py-1"
       />
     </div>
   )
@@ -74,18 +79,18 @@ export default function ContextStep({ ctx, setCtx, onNext }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-3xl text-text">
+        <h2 className="font-sans font-bold text-3xl gradient-heading">
           What's your situation?
         </h2>
-        <p className="text-muted mt-2">
+        <p className="text-muted-foreground mt-2">
           Your answers determine which objectives are recommended.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
-          <div className="bg-white rounded-xl p-5 border border-border">
-            <label className="uppercase text-xs font-semibold tracking-wide text-muted block mb-2">
+          <div className="bg-card rounded-xl p-5 border border-border glass-card">
+            <label className="uppercase text-xs font-semibold tracking-wide text-muted-foreground block mb-2">
               Company name
             </label>
             <input
@@ -93,7 +98,7 @@ export default function ContextStep({ ctx, setCtx, onNext }) {
               value={ctx.company}
               placeholder="e.g. Acme Corp"
               onChange={(e) => setCtx("company", e.target.value)}
-              className="w-full border-none bg-transparent text-lg font-semibold text-text outline-none"
+              className="w-full border-none bg-transparent text-lg font-semibold text-foreground outline-none"
             />
           </div>
         </div>
@@ -103,7 +108,7 @@ export default function ContextStep({ ctx, setCtx, onNext }) {
           options={STAGES}
           value={ctx.stage}
           onChange={(val) => setCtx("stage", val)}
-          selectedBorderColor="#4A235A"
+          selectedBorderColor="#8B5CF6"
         />
 
         <RadioGroup
@@ -111,13 +116,13 @@ export default function ContextStep({ ctx, setCtx, onNext }) {
           options={BOTTLENECKS}
           value={ctx.bottleneck}
           onChange={(val) => setCtx("bottleneck", val)}
-          selectedBorderColor="#C0392B"
+          selectedBorderColor="#EF4444"
         />
 
         <TextInputCard
           label="Current ARR"
           value={ctx.arr}
-          placeholder="e.g. \u20AC800k"
+          placeholder="e.g. &euro;800k"
           onChange={(val) => setCtx("arr", val)}
         />
         <TextInputCard
@@ -141,27 +146,23 @@ export default function ContextStep({ ctx, setCtx, onNext }) {
       </div>
 
       {contextReady && (
-        <div className="bg-accent-light rounded-xl p-5 border border-accent/20">
+        <div className="bg-primary/10 rounded-xl p-5 border border-primary/20 shadow-[0_0_30px_-10px_oklch(0.55_0.2_280_/_0.3)]">
           <div className="flex items-start gap-3">
-            <span className="text-accent text-xl shrink-0" aria-hidden="true">
+            <span className="text-primary text-xl shrink-0" aria-hidden="true">
               &#10003;
             </span>
             <div className="flex-1">
-              <p className="font-semibold text-text">
+              <p className="font-semibold text-foreground">
                 Context set. Recommendations are ready.
               </p>
-              <p className="text-sm text-muted mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Stage: <strong>{ctx.stage}</strong> &middot; Bottleneck:{" "}
                 <strong>{ctx.bottleneck}</strong>
               </p>
             </div>
-            <button
-              type="button"
-              onClick={onNext}
-              className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shrink-0"
-            >
+            <Button onClick={onNext}>
               View recommendations &rarr;
-            </button>
+            </Button>
           </div>
         </div>
       )}
