@@ -32,7 +32,10 @@ export const api = {
   listKRStatuses: (setId) => apiFetch(`/kr-status?set_id=${setId}`),
   updateKRStatus: (setId, payload) => apiFetch(`/kr-status?set_id=${setId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
-  listTemplates: (objectiveIds) => {
+  listTemplates: (objectiveIds, krIds) => {
+    if (krIds?.length) {
+      return apiFetch(`/action-templates?kr_ids=${krIds.join(",")}`)
+    }
     const params = objectiveIds?.length ? `?objective_ids=${objectiveIds.join(",")}` : ""
     return apiFetch(`/action-templates${params}`)
   },

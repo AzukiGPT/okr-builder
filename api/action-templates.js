@@ -20,6 +20,7 @@ export default async function handler(req) {
 
   const url = new URL(req.url)
   const objectiveIdsParam = url.searchParams.get("objective_ids")
+  const krIdsParam = url.searchParams.get("kr_ids")
 
   let query = supabaseAdmin
     .from("action_templates")
@@ -27,8 +28,12 @@ export default async function handler(req) {
     .eq("is_active", true)
     .order("title")
 
-  // Filter by relevant_objectives overlap if provided
-  if (objectiveIdsParam) {
+  // Filter by relevant_kr_ids overlap (preferred, more specific)
+  if (krIdsParam) {
+    const krIds = krIdsParam.split(",").map((id) => id.trim())
+    query = query.overlaps("relevant_kr_ids", krIds)
+  } else if (objectiveIdsParam) {
+    // Fallback: filter by relevant_objectives overlap
     const objectiveIds = objectiveIdsParam.split(",").map((id) => id.trim())
     query = query.overlaps("relevant_objectives", objectiveIds)
   }
