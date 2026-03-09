@@ -1,12 +1,13 @@
-import { useState, useCallback } from "react"
-import { OBJECTIVES } from "../../data/objectives"
-import { TEAM_CONFIG, TEAMS } from "../../data/config"
+import { useState, useCallback, useMemo } from "react"
 import { ACTION_STATUSES } from "../../data/actions-config"
-import ActionCard from "../ui/action-card"
+import ActionsViewToolbar from "../ui/actions-view-toolbar"
+import ActionsTableView from "../ui/actions-table-view"
+import ActionsKanbanView from "../ui/actions-kanban-view"
+import ActionsGanttView from "../ui/actions-gantt-view"
 import ActionForm from "../ui/action-form"
 import TemplateSuggestions from "../ui/template-suggestions"
 import { Button } from "@/components/ui/button"
-import { Plus, ArrowLeft, Zap } from "lucide-react"
+import { ArrowLeft, Zap } from "lucide-react"
 
 export default function ActionsStep({
   selected,
@@ -21,6 +22,8 @@ export default function ActionsStep({
   onBack,
   onBackToSets,
 }) {
+  const [viewMode, setViewMode] = useState("table")
+  const [groupBy, setGroupBy] = useState("status")
   const [showForm, setShowForm] = useState(false)
   const [editingAction, setEditingAction] = useState(null)
 
@@ -28,25 +31,18 @@ export default function ActionsStep({
   const doneActions = actions.filter((a) => a.status === "done").length
   const progressPercent = totalActions > 0 ? Math.round((doneActions / totalActions) * 100) : 0
 
-  // Map KR UUIDs to objective IDs for grouping actions per objective
-  const uuidToObjId = {}
-  if (krStatuses) {
-    for (const [krId, data] of Object.entries(krStatuses)) {
-      if (data?.uuid) {
-        uuidToObjId[data.uuid] = krId.split(".")[0]
+  // Build uuid → team map for team grouping
+  const uuidToTeam = useMemo(() => {
+    const map = {}
+    if (krStatuses) {
+      for (const [krId, data] of Object.entries(krStatuses)) {
+        if (data?.uuid && data?.team) {
+          map[data.uuid] = data.team
+        }
       }
     }
-  }
-
-  const getActionsForObjective = useCallback((objId) => {
-    return actions.filter((action) =>
-      (action.kr_ids || []).some((uuid) => uuidToObjId[uuid] === objId)
-    )
-  }, [actions, uuidToObjId])
-
-  const unlinkedActions = actions.filter((action) =>
-    !action.kr_ids?.length || action.kr_ids.every((uuid) => !uuidToObjId[uuid])
-  )
+    return map
+  }, [krStatuses])
 
   const handleCreate = useCallback(async (payload) => {
     await onCreateAction(payload)
@@ -58,6 +54,10 @@ export default function ActionsStep({
     await onUpdateAction(editingAction.id, payload)
     setEditingAction(null)
   }, [editingAction, onUpdateAction])
+
+  const handleInlineUpdate = useCallback(async (id, updates) => {
+    await onUpdateAction(id, updates)
+  }, [onUpdateAction])
 
   const handleDelete = useCallback(async (id) => {
     await onDeleteAction(id)
@@ -82,8 +82,14 @@ export default function ActionsStep({
     setShowForm(false)
   }, [])
 
+  const handleAddAction = useCallback(() => {
+    setShowForm(true)
+    setEditingAction(null)
+  }, [])
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
         <div className="flex items-center gap-2">
           <Zap className="w-7 h-7 text-primary" />
@@ -123,89 +129,54 @@ export default function ActionsStep({
         </div>
       )}
 
-      {/* Actions grouped by objective */}
-      {TEAMS.map((team) => {
-        if (!selected[team]?.length) return null
-        const cfg = TEAM_CONFIG[team]
-        const objectives = OBJECTIVES[team].filter((obj) => selected[team].includes(obj.id))
+      {/* Toolbar */}
+      <ActionsViewToolbar
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        groupBy={groupBy}
+        onGroupByChange={setGroupBy}
+        onAddAction={handleAddAction}
+      />
 
-        return objectives.map((obj) => {
-          const objActions = getActionsForObjective(obj.id)
-
-          return (
-            <div key={obj.id} className="space-y-2">
-              <div
-                className="rounded-lg px-4 py-2 flex items-center justify-between"
-                style={{ backgroundColor: `${cfg.colorHex}12` }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold" style={{ color: cfg.colorHex }}>
-                    {obj.id}
-                  </span>
-                  <span className="font-bold text-sm text-foreground">{obj.title}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">{objActions.length} actions</span>
-              </div>
-
-              {objActions.map((action) => (
-                editingAction?.id === action.id ? (
-                  <ActionForm
-                    key={action.id}
-                    initialData={action}
-                    selected={selected}
-                    krStatuses={krStatuses}
-                    onSubmit={handleUpdate}
-                    onCancel={() => setEditingAction(null)}
-                  />
-                ) : (
-                  <ActionCard
-                    key={action.id}
-                    action={action}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                )
-              ))}
-
-              {objActions.length === 0 && (
-                <p className="text-xs text-muted-foreground pl-4 py-2">
-                  No actions yet for this objective.
-                </p>
-              )}
-            </div>
-          )
-        })
-      })}
-
-      {/* Unlinked actions */}
-      {unlinkedActions.length > 0 && (
-        <div className="space-y-2">
-          <div className="rounded-lg px-4 py-2 bg-muted">
-            <span className="font-bold text-sm text-foreground">Unlinked actions</span>
-          </div>
-          {unlinkedActions.map((action) => (
-            editingAction?.id === action.id ? (
-              <ActionForm
-                key={action.id}
-                initialData={action}
-                selected={selected}
-                krStatuses={krStatuses}
-                onSubmit={handleUpdate}
-                onCancel={() => setEditingAction(null)}
-              />
-            ) : (
-              <ActionCard
-                key={action.id}
-                action={action}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            )
-          ))}
-        </div>
+      {/* Active view */}
+      {viewMode === "table" && (
+        <ActionsTableView
+          actions={actions}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onUpdateAction={handleInlineUpdate}
+        />
+      )}
+      {viewMode === "kanban" && (
+        <ActionsKanbanView
+          actions={actions}
+          groupBy={groupBy}
+          uuidToTeam={uuidToTeam}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onUpdateAction={handleInlineUpdate}
+        />
+      )}
+      {viewMode === "gantt" && (
+        <ActionsGanttView
+          actions={actions}
+          onUpdateAction={handleInlineUpdate}
+          onEdit={handleEdit}
+        />
       )}
 
-      {/* Editing from template (no existing id) */}
+      {/* Edit form (for existing action) */}
+      {editingAction && editingAction.id && (
+        <ActionForm
+          initialData={editingAction}
+          selected={selected}
+          krStatuses={krStatuses}
+          onSubmit={handleUpdate}
+          onCancel={() => setEditingAction(null)}
+        />
+      )}
+
+      {/* Edit form (from template, no existing id) */}
       {editingAction && !editingAction.id && (
         <ActionForm
           initialData={editingAction}
@@ -216,27 +187,19 @@ export default function ActionsStep({
         />
       )}
 
-      {/* Template suggestions */}
-      {templates && templates.length > 0 && !showForm && !editingAction && (
-        <TemplateSuggestions templates={templates} onAddFromTemplate={handleAddFromTemplate} />
-      )}
-
-      {/* New action form or button */}
-      {showForm ? (
+      {/* New action form */}
+      {showForm && (
         <ActionForm
           selected={selected}
           krStatuses={krStatuses}
           onSubmit={handleCreate}
           onCancel={() => setShowForm(false)}
         />
-      ) : (
-        <button
-          onClick={() => { setShowForm(true); setEditingAction(null) }}
-          className="w-full rounded-lg border-2 border-dashed border-primary/30 hover:border-primary/60 p-4 flex items-center justify-center gap-2 text-sm text-primary font-semibold transition-colors cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Add action
-        </button>
+      )}
+
+      {/* Template suggestions */}
+      {templates && templates.length > 0 && !showForm && !editingAction && (
+        <TemplateSuggestions templates={templates} onAddFromTemplate={handleAddFromTemplate} />
       )}
 
       {/* Navigation */}

@@ -1,6 +1,6 @@
 import { useRef, useEffect, useMemo } from "react"
 import Gantt from "frappe-gantt"
-import "frappe-gantt/dist/frappe-gantt.css"
+import "../../styles/frappe-gantt.css"
 import { ACTION_CHANNELS, ACTION_STATUSES } from "../../data/actions-config"
 
 function toGanttTasks(actions) {
