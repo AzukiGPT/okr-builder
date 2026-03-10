@@ -21,6 +21,12 @@ export function useCloudSync(state, dispatch) {
 
   const loadSet = useCallback((set) => {
     setActiveSetId(set.id)
+
+    // Compute maxStep based on existing data so user can navigate freely
+    const hasSelected = set.selected
+      && (set.selected.sales?.length > 0 || set.selected.marketing?.length > 0 || set.selected.csm?.length > 0)
+    const maxStep = hasSelected ? 4 : set.ctx?.stage ? 0 : 0
+
     dispatch({
       type: "LOAD",
       payload: {
@@ -29,6 +35,7 @@ export function useCloudSync(state, dispatch) {
         funnel: set.funnel,
         customTargets: set.custom_targets,
         step: 0,
+        maxStep,
       },
     })
     lastSavedRef.current = JSON.stringify({
