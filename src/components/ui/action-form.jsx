@@ -286,7 +286,7 @@ export default function ActionForm({ onSubmit, onCancel, initialData, selected, 
           Cancel
         </Button>
         <Button type="submit" size="sm" disabled={!title.trim()}>
-          {initialData ? "Update" : "Create"}
+          {initialData?.id ? "Update" : "Add"}
         </Button>
       </div>
     </form>
