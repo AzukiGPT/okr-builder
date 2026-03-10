@@ -56,7 +56,12 @@ export function getGroupConfig(groupBy) {
   return GROUP_CONFIGS[groupBy] || GROUP_CONFIGS.status
 }
 
-export function groupActions(actions, groupBy, uuidToTeam, dynamicPhases) {
+export function groupActions(actions, groupBy, uuidToTeam, dynamicPhases, krStatuses) {
+  // KR grouping uses a dynamic column set derived from krStatuses
+  if (groupBy === "kr") {
+    return groupActionsByKr(actions, krStatuses)
+  }
+
   const config = getGroupConfig(groupBy)
 
   const columns = (groupBy === "phase" && dynamicPhases?.length > 0)
@@ -88,7 +93,55 @@ export function groupActions(actions, groupBy, uuidToTeam, dynamicPhases) {
   return [...groups.values()]
 }
 
+function groupActionsByKr(actions, krStatuses) {
+  // Build uuid → { krId, team } from krStatuses
+  const uuidToKr = {}
+  if (krStatuses) {
+    for (const [krId, data] of Object.entries(krStatuses)) {
+      if (data?.uuid) uuidToKr[data.uuid] = { krId, team: data.team }
+    }
+  }
+
+  const teamColors = { sales: "#3B82F6", marketing: "#8B5CF6", csm: "#22C55E" }
+  const groups = new Map()
+
+  for (const action of actions) {
+    const krUuids = action.kr_ids || []
+    if (krUuids.length === 0) {
+      if (!groups.has("unlinked")) {
+        groups.set("unlinked", { key: "unlinked", label: "Unlinked", colorHex: "#6B7280", actions: [] })
+      }
+      groups.get("unlinked").actions.push(action)
+    } else {
+      for (const uuid of krUuids) {
+        const kr = uuidToKr[uuid]
+        const krKey = kr?.krId || uuid
+        if (!groups.has(krKey)) {
+          groups.set(krKey, {
+            key: krKey,
+            label: krKey,
+            colorHex: teamColors[kr?.team] || "#6B7280",
+            actions: [],
+          })
+        }
+        groups.get(krKey).actions.push(action)
+      }
+    }
+  }
+
+  // Sort: sales → marketing → csm → unlinked
+  const teamOrder = { sales: 0, marketing: 1, csm: 2 }
+  return [...groups.values()].sort((a, b) => {
+    if (a.key === "unlinked") return 1
+    if (b.key === "unlinked") return -1
+    const aKr = uuidToKr[Object.values(uuidToKr).find((v) => v.krId === a.key)?.krId] || {}
+    const bKr = uuidToKr[Object.values(uuidToKr).find((v) => v.krId === b.key)?.krId] || {}
+    // Just sort by key string (e.g. "S1.1" < "M1.1")
+    return a.key.localeCompare(b.key, undefined, { numeric: true })
+  })
+}
+
 export function getGroupFieldName(groupBy) {
-  const map = { status: "status", channel: "channel", priority: "priority", team: null, phase: "phase_id" }
+  const map = { status: "status", channel: "channel", priority: "priority", team: null, phase: "phase_id", kr: null }
   return map[groupBy] ?? "status"
 }

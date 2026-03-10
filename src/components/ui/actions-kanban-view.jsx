@@ -81,13 +81,14 @@ export default function ActionsKanbanView({
   actions,
   groupBy,
   uuidToTeam,
+  krStatuses,
   phases,
   onEdit,
   onDelete,
   onUpdateAction,
 }) {
   const [activeId, setActiveId] = useState(null)
-  const groups = groupActions(actions, groupBy, uuidToTeam, phases)
+  const groups = groupActions(actions, groupBy, uuidToTeam, phases, krStatuses)
   const fieldName = getGroupFieldName(groupBy)
 
   const sensors = useSensors(

@@ -46,16 +46,6 @@ export function useCloudSync(state, dispatch) {
     })
   }, [dispatch])
 
-  const deleteSet = useCallback(async (id) => {
-    await api.deleteSet(id)
-    setSets((prev) => prev.filter((s) => s.id !== id))
-  }, [])
-
-  const renameSet = useCallback(async (id, name) => {
-    await api.updateSet(id, { name })
-    setSets((prev) => prev.map((s) => s.id === id ? { ...s, name } : s))
-  }, [])
-
   const createSet = useCallback(async (name) => {
     const payload = {
       name: name || state.ctx.company || "Mon OKR Set",
@@ -118,8 +108,6 @@ export function useCloudSync(state, dispatch) {
     loadSets,
     loadSet,
     createSet,
-    deleteSet,
-    renameSet,
     setActiveSetId,
   }
 }

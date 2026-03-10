@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Building2, Target, Rocket, Palette, ChevronDown, ChevronRight } from "lucide-react"
 import { useAuth } from "../../contexts/AuthContext"
-import { SECTIONS, getActiveSectionForStep, isOKRStep } from "../../lib/navigation"
+import { SECTIONS, getActiveSectionForStep } from "../../lib/navigation"
 
 const ICON_MAP = { Building2, Target, Rocket, Palette }
 
@@ -14,17 +14,15 @@ function getInitials(email) {
   return email.slice(0, 2).toUpperCase()
 }
 
-function resolveActive(activePage, activeSetId, step) {
+function resolveActive(activePage, step) {
   if (activePage === "company") return { sectionId: "company" }
-  if (activePage === "sets") return { sectionId: "okrs", subPageId: "sets" }
   if (activePage === "marketing-assets") return { sectionId: "marketing-assets" }
-  if (!activeSetId) return { sectionId: "okrs", subPageId: "sets" }
   return getActiveSectionForStep(step)
 }
 
 // ── User Footer ──────────────────────────────────────────────────────
 
-function UserFooter({ saveStatus, onBackToSets, onNavigate }) {
+function UserFooter({ saveStatus, onNavigate }) {
   const { user, profile, signOut } = useAuth()
   if (!user) return null
 
@@ -48,13 +46,6 @@ function UserFooter({ saveStatus, onBackToSets, onNavigate }) {
         </div>
       </div>
       <div className="flex gap-2 pl-9">
-        <button
-          type="button"
-          onClick={onBackToSets}
-          className="text-[11px] text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors cursor-pointer"
-        >
-          My sets
-        </button>
         {profile?.role === "admin" && onNavigate && (
           <button
             type="button"
@@ -114,15 +105,14 @@ function SectionItem({ section, isActive, disabled, hasChevron, expanded, onClic
 
 // ── Sub-Page Item ────────────────────────────────────────────────────
 
-function SubPageItem({ subPage, isActive, disabled, onClick }) {
+function SubPageItem({ subPage, isActive, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled}
-      className={`flex items-center gap-2.5 w-full pl-10 pr-3 py-1.5 rounded-md transition-all ${
-        disabled ? "opacity-35 cursor-default" : "cursor-pointer"
-      } ${isActive ? "bg-primary/5" : disabled ? "" : "hover:bg-sidebar-accent/50"}`}
+      className={`flex items-center gap-2.5 w-full pl-10 pr-3 py-1.5 rounded-md transition-all cursor-pointer ${
+        isActive ? "bg-primary/5" : "hover:bg-sidebar-accent/50"
+      }`}
     >
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? "bg-primary" : "bg-sidebar-foreground/20"}`} />
       <span className={`text-[13px] ${isActive ? "text-sidebar-foreground font-semibold" : "text-sidebar-foreground/55"}`}>
@@ -136,10 +126,10 @@ function SubPageItem({ subPage, isActive, disabled, onClick }) {
 
 function DesktopSidebar({
   step, setStep, activeSetId, activeSetName,
-  saveStatus, onBackToSets, onNavigate,
+  saveStatus, onNavigate,
   activePage, onSetActivePage,
 }) {
-  const active = resolveActive(activePage, activeSetId, step)
+  const active = resolveActive(activePage, step)
   const [okrsExpanded, setOkrsExpanded] = useState(true)
 
   useEffect(() => {
@@ -154,7 +144,7 @@ function DesktopSidebar({
     if (section.id === "okrs") {
       setOkrsExpanded((prev) => !prev)
       if (active.sectionId !== "okrs") {
-        onSetActivePage("sets")
+        setStep(0)
       }
       return
     }
@@ -169,11 +159,6 @@ function DesktopSidebar({
   }
 
   function handleSubPageClick(subPage) {
-    if (subPage.id === "sets") {
-      onSetActivePage("sets")
-      return
-    }
-    if (subPage.requiresSet && !activeSetId) return
     if (subPage.step != null) {
       setStep(subPage.step)
     }
@@ -185,7 +170,7 @@ function DesktopSidebar({
       <div className="px-5 pt-6 pb-4">
         <h1 className="font-sans font-bold text-xl gradient-heading">OKR Builder</h1>
         <p className="text-sidebar-foreground/40 text-xs mt-1 truncate">
-          {activeSetId ? activeSetName : "Select a set to begin"}
+          {activeSetName || "OKR Builder"}
         </p>
       </div>
 
@@ -210,18 +195,14 @@ function DesktopSidebar({
               />
               {hasSubPages && okrsExpanded && (
                 <div className="mt-0.5 mb-1 space-y-0.5">
-                  {section.subPages.map((sub) => {
-                    const subDisabled = sub.requiresSet && !activeSetId
-                    return (
-                      <SubPageItem
-                        key={sub.id}
-                        subPage={sub}
-                        isActive={isSectionActive && active.subPageId === sub.id}
-                        disabled={subDisabled}
-                        onClick={() => handleSubPageClick(sub)}
-                      />
-                    )
-                  })}
+                  {section.subPages.map((sub) => (
+                    <SubPageItem
+                      key={sub.id}
+                      subPage={sub}
+                      isActive={isSectionActive && active.subPageId === sub.id}
+                      onClick={() => handleSubPageClick(sub)}
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -229,7 +210,7 @@ function DesktopSidebar({
         })}
       </div>
 
-      <UserFooter saveStatus={saveStatus} onBackToSets={onBackToSets} onNavigate={onNavigate} />
+      <UserFooter saveStatus={saveStatus} onNavigate={onNavigate} />
     </nav>
   )
 }
@@ -237,13 +218,12 @@ function DesktopSidebar({
 // ── Mobile Sidebar ───────────────────────────────────────────────────
 
 function MobileSidebar({ step, setStep, activeSetId, activePage, onSetActivePage }) {
-  const active = resolveActive(activePage, activeSetId, step)
+  const active = resolveActive(activePage, step)
 
   function handleTap(section) {
     if (section.id === "company") { onSetActivePage("company"); return }
     if (section.placeholder) { onSetActivePage(section.id); return }
     if (section.subPages) {
-      if (!activeSetId) { onSetActivePage("sets"); return }
       setStep(0)
       return
     }

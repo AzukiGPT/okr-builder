@@ -14,6 +14,7 @@ const GROUP_OPTIONS = [
   { key: "priority", label: "Priority" },
   { key: "phase", label: "Phase" },
   { key: "team", label: "Team" },
+  { key: "kr", label: "Key Result" },
 ]
 
 export default function ActionsViewToolbar({

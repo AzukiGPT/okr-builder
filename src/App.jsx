@@ -24,7 +24,6 @@ import OKRSystemStep from "./components/steps/OKRSystemStep"
 import ActionsStep from "./components/steps/ActionsStep"
 import CompanyPage from "./components/steps/CompanyPage"
 import MarketingAssetsPage from "./components/steps/MarketingAssetsPage"
-import SetSelector from "./components/auth/SetSelector"
 
 export default function App({ onNavigate }) {
   const {
@@ -37,7 +36,7 @@ export default function App({ onNavigate }) {
 
   const {
     activeSetId, saveStatus, sets,
-    loadSets, loadSet, createSet, deleteSet, renameSet, setActiveSetId,
+    loadSets, loadSet, createSet, setActiveSetId,
   } = useCloudSync(state, dispatch)
 
   const { krStatuses, setKRStatus, setKRProgress } = useKRSync(activeSetId)
@@ -45,16 +44,30 @@ export default function App({ onNavigate }) {
   const { templates } = useTemplates(state.selected)
   const { phases, ensureDefaultPhases } = usePhases(activeSetId)
   const { dependencies, createDependency, deleteDependency } = useDependencies(activeSetId)
-  const activeSetName = sets.find((s) => s.id === activeSetId)?.name || "Action Plan"
+  const activeSetName = sets.find((s) => s.id === activeSetId)?.name || "Mon OKR Set"
 
   const [activePage, setActivePage] = useState(null)
   const [setsLoading, setSetsLoading] = useState(true)
-  const [creating, setCreating] = useState(false)
-  const [error, setError] = useState(null)
 
+  // Auto-init: load or create the single OKR set
   useEffect(() => {
-    loadSets().then(() => setSetsLoading(false))
-  }, [loadSets])
+    let cancelled = false
+    async function initSet() {
+      const existingSets = await loadSets()
+      if (cancelled) return
+      if (existingSets.length > 0) {
+        loadSet(existingSets[0])
+      } else {
+        reset()
+        const newSet = await createSet("Mon OKR Set")
+        if (cancelled) return
+        setActiveSetId(newSet.id)
+      }
+      setSetsLoading(false)
+    }
+    initSet().catch(() => setSetsLoading(false))
+    return () => { cancelled = true }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Navigate to a step (clears activePage so step content shows)
   const handleSetStep = useCallback((s) => {
@@ -85,34 +98,18 @@ export default function App({ onNavigate }) {
     setTimeout(() => setNotionCopied(false), 2000)
   }, [state.ctx, state.selected, calc, state.customTargets])
 
-  const handleCreateNew = useCallback(async () => {
-    setCreating(true)
-    setError(null)
-    try {
-      reset()
-      const newSet = await createSet("Mon OKR Set")
-      setActiveSetId(newSet.id)
-      setActivePage(null)
-    } catch (err) {
-      setError(err.message || "Failed to create set. Please try again.")
-    } finally {
-      setCreating(false)
-    }
-  }, [reset, createSet, setActiveSetId])
+  // Page key for CSS transitions
+  const pageKey = activePage || `step-${state.step}`
 
-  const handleBackToSets = useCallback(() => {
-    setActiveSetId(null)
-    reset()
-    setActivePage("sets")
-    loadSets()
-  }, [setActiveSetId, reset, loadSets])
-
-  // Determine page key for CSS transitions
-  const pageKey = activePage || (!activeSetId ? "sets" : `step-${state.step}`)
-
-  // Determine what content to show
-  const showSets = activePage === "sets" || (!activeSetId && !activePage)
   const showStep = activeSetId && !activePage
+
+  if (setsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <AppShell
@@ -121,7 +118,6 @@ export default function App({ onNavigate }) {
       activeSetId={activeSetId}
       activeSetName={activeSetName}
       saveStatus={saveStatus}
-      onBackToSets={handleBackToSets}
       onNavigate={onNavigate}
       activePage={activePage}
       onSetActivePage={handleSetActivePage}
@@ -129,18 +125,6 @@ export default function App({ onNavigate }) {
     >
       {activePage === "company" && <CompanyPage />}
       {activePage === "marketing-assets" && <MarketingAssetsPage />}
-      {showSets && (
-        <SetSelector
-          sets={sets}
-          loading={setsLoading}
-          creating={creating}
-          error={error}
-          onLoadSet={loadSet}
-          onCreateNew={handleCreateNew}
-          onDeleteSet={deleteSet}
-          onRenameSet={renameSet}
-        />
-      )}
       {showStep && state.step === 0 && (
         <ContextStep
           ctx={state.ctx}
@@ -180,7 +164,6 @@ export default function App({ onNavigate }) {
           onKRStatusChange={setKRStatus}
           onKRProgressChange={setKRProgress}
           onBack={() => handleSetStep(2)}
-          onNext={() => handleSetStep(4)}
           onReset={() => { reset(); handleSetStep(0) }}
           onExportPDF={() => generatePDF({
             ctx: state.ctx,
@@ -218,8 +201,6 @@ export default function App({ onNavigate }) {
           onCreateDependency={createDependency}
           onDeleteDependency={deleteDependency}
           onDeleteAction={deleteAction}
-          onBack={() => handleSetStep(3)}
-          onBackToSets={handleBackToSets}
           onExportPDF={() => generateActionsPDF({
             actions,
             phases,

@@ -8,7 +8,7 @@ import ActionsGanttView from "../ui/actions-gantt-view"
 import ActionForm from "../ui/action-form"
 import TemplateSuggestions from "../ui/template-suggestions"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Zap } from "lucide-react"
+import { Rocket, Sparkles, Zap, Loader2, Plus } from "lucide-react"
 
 export default function ActionsStep({
   selected,
@@ -26,8 +26,6 @@ export default function ActionsStep({
   onBatchCreateActions,
   onUpdateAction,
   onDeleteAction,
-  onBack,
-  onBackToSets,
   onExportPDF,
   onExportExcel,
   onCopyNotion,
@@ -145,19 +143,84 @@ export default function ActionsStep({
     setEditingAction(null)
   }, [])
 
+  const [onboarding, setOnboarding] = useState(false)
+
+  const handleOnboardingAdd = useCallback(async () => {
+    if (!onBatchCreateActions || !templates?.length) return
+    setOnboarding(true)
+    try {
+      const payloads = templates.map((tpl) => ({
+        title: tpl.title,
+        description: tpl.description,
+        channel: tpl.channel,
+        action_type: tpl.action_type,
+        source: "template",
+        template_id: tpl.id,
+        priority: "medium",
+        kr_ids: resolveKrUuids(tpl.relevant_kr_ids),
+        phase_id: resolvePhaseId(tpl.default_phase),
+        estimated_days: tpl.estimated_days || 10,
+      }))
+      await onBatchCreateActions(payloads)
+    } finally {
+      setOnboarding(false)
+    }
+  }, [onBatchCreateActions, templates, resolveKrUuids, resolvePhaseId])
+
+  const newTemplateCount = useMemo(() => {
+    if (!templates?.length || !existingTemplateIds) return templates?.length || 0
+    return templates.filter((tpl) => !existingTemplateIds.has(tpl.id)).length
+  }, [templates, existingTemplateIds])
+
+  const showOnboarding = totalActions === 0 && newTemplateCount > 0 && !showForm && !editingAction
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <Zap className="w-7 h-7 text-primary" />
-          <h2 className="font-sans font-bold text-3xl gradient-heading">Action Plan</h2>
+          <Rocket className="w-7 h-7 text-primary" />
+          <h2 className="font-sans font-bold text-3xl gradient-heading">Plan marketing</h2>
         </div>
         <p className="text-muted-foreground mt-2">
           {totalActions} action{totalActions !== 1 ? "s" : ""} planned
           {totalActions > 0 && ` \u2014 ${doneActions} completed`}
         </p>
       </div>
+
+      {/* Onboarding: first visit with templates available */}
+      {showOnboarding && (
+        <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-8 text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+          <div>
+            <h3 className="font-sans font-bold text-lg text-foreground">
+              {newTemplateCount} actions recommandées
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+              Basées sur vos OKRs, nous avons identifié des actions marketing prêtes à l'emploi.
+              Ajoutez-les toutes d'un clic, ou parcourez-les une par une.
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-3">
+            <Button onClick={handleOnboardingAdd} disabled={onboarding} className="gap-2">
+              {onboarding ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Zap className="w-4 h-4" />
+              )}
+              {onboarding ? "Ajout en cours..." : `Ajouter les ${newTemplateCount} actions`}
+            </Button>
+            <Button variant="outline" onClick={handleAddAction}>
+              <Plus className="w-4 h-4 mr-1" />
+              Créer manuellement
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Progress summary */}
       {totalActions > 0 && (
@@ -219,6 +282,7 @@ export default function ActionsStep({
           actions={actions}
           groupBy={groupBy}
           uuidToTeam={uuidToTeam}
+          krStatuses={krStatuses}
           phases={phases}
           onEdit={handleEdit}
           onDelete={handleDelete}
@@ -281,19 +345,6 @@ export default function ActionsStep({
           onBatchAdd={handleBatchAdd}
         />
       )}
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-4">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to OKRs
-        </Button>
-        {onBackToSets && (
-          <Button onClick={onBackToSets} size="lg" className="px-8">
-            Done — back to my sets
-          </Button>
-        )}
-      </div>
     </div>
   )
 }
