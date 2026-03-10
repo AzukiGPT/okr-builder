@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { ACTION_STATUSES } from "../../data/actions-config"
 import ActionsViewToolbar from "../ui/actions-view-toolbar"
 import ActionsTableView from "../ui/actions-table-view"
@@ -16,6 +16,8 @@ export default function ActionsStep({
   krStatuses,
   activeSetId,
   templates,
+  phases,
+  ensureDefaultPhases,
   onCreateAction,
   onBatchCreateActions,
   onUpdateAction,
@@ -27,6 +29,10 @@ export default function ActionsStep({
   const [groupBy, setGroupBy] = useState("status")
   const [showForm, setShowForm] = useState(false)
   const [editingAction, setEditingAction] = useState(null)
+
+  useEffect(() => {
+    if (ensureDefaultPhases) ensureDefaultPhases()
+  }, [ensureDefaultPhases])
 
   const totalActions = actions.length
   const doneActions = actions.filter((a) => a.status === "done").length
@@ -86,6 +92,14 @@ export default function ActionsStep({
     return ids
   }, [actions])
 
+  const resolvePhaseId = useCallback((defaultPhase) => {
+    if (!defaultPhase || !phases?.length) return null
+    const match = phases.find((p) =>
+      p.name.toLowerCase().includes(defaultPhase) || defaultPhase.includes(p.name.toLowerCase().split(" ")[0].toLowerCase())
+    )
+    return match?.id || null
+  }, [phases])
+
   const handleAddFromTemplate = useCallback(async (tpl) => {
     await onCreateAction({
       title: tpl.title,
@@ -96,8 +110,10 @@ export default function ActionsStep({
       template_id: tpl.id,
       priority: "medium",
       kr_ids: resolveKrUuids(tpl.relevant_kr_ids),
+      phase_id: resolvePhaseId(tpl.default_phase),
+      estimated_days: tpl.estimated_days || 10,
     })
-  }, [onCreateAction, resolveKrUuids])
+  }, [onCreateAction, resolveKrUuids, resolvePhaseId])
 
   const handleBatchAdd = useCallback(async (templatesToAdd) => {
     if (!onBatchCreateActions) return
@@ -110,9 +126,11 @@ export default function ActionsStep({
       template_id: tpl.id,
       priority: "medium",
       kr_ids: resolveKrUuids(tpl.relevant_kr_ids),
+      phase_id: resolvePhaseId(tpl.default_phase),
+      estimated_days: tpl.estimated_days || 10,
     }))
     await onBatchCreateActions(payloads)
-  }, [onBatchCreateActions, resolveKrUuids])
+  }, [onBatchCreateActions, resolveKrUuids, resolvePhaseId])
 
   const handleAddAction = useCallback(() => {
     setShowForm(true)
@@ -184,6 +202,7 @@ export default function ActionsStep({
           actions={actions}
           groupBy={groupBy}
           uuidToTeam={uuidToTeam}
+          phases={phases}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onUpdateAction={handleInlineUpdate}
@@ -192,6 +211,7 @@ export default function ActionsStep({
       {viewMode === "gantt" && (
         <ActionsGanttView
           actions={actions}
+          phases={phases}
           onUpdateAction={handleInlineUpdate}
           onEdit={handleEdit}
         />
@@ -203,6 +223,7 @@ export default function ActionsStep({
           initialData={editingAction}
           selected={selected}
           krStatuses={krStatuses}
+          phases={phases}
           onSubmit={handleUpdate}
           onCancel={() => setEditingAction(null)}
         />
@@ -214,6 +235,7 @@ export default function ActionsStep({
           initialData={editingAction}
           selected={selected}
           krStatuses={krStatuses}
+          phases={phases}
           onSubmit={handleCreate}
           onCancel={() => setEditingAction(null)}
         />
@@ -224,6 +246,7 @@ export default function ActionsStep({
         <ActionForm
           selected={selected}
           krStatuses={krStatuses}
+          phases={phases}
           onSubmit={handleCreate}
           onCancel={() => setShowForm(false)}
         />

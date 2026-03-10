@@ -1,4 +1,4 @@
-import { ACTION_STATUSES, ACTION_CHANNELS, ACTION_PRIORITIES } from "../data/actions-config"
+import { ACTION_STATUSES, ACTION_CHANNELS, ACTION_PRIORITIES, DEFAULT_PHASES } from "../data/actions-config"
 import { TEAM_CONFIG } from "../data/config"
 
 const GROUP_CONFIGS = {
@@ -43,17 +43,32 @@ const GROUP_CONFIGS = {
       { key: "unlinked", label: "Unlinked", colorHex: "#6B7280" },
     ],
   },
+  phase: {
+    getKey: (a) => a.phase_id || "unassigned",
+    columns: [
+      ...DEFAULT_PHASES.map((p) => ({ key: p.key, label: p.name, colorHex: p.colorHex })),
+      { key: "unassigned", label: "Unassigned", colorHex: "#6B7280" },
+    ],
+  },
 }
 
 export function getGroupConfig(groupBy) {
   return GROUP_CONFIGS[groupBy] || GROUP_CONFIGS.status
 }
 
-export function groupActions(actions, groupBy, uuidToTeam) {
+export function groupActions(actions, groupBy, uuidToTeam, dynamicPhases) {
   const config = getGroupConfig(groupBy)
+
+  const columns = (groupBy === "phase" && dynamicPhases?.length > 0)
+    ? [
+        ...dynamicPhases.map((p) => ({ key: p.id, label: p.name, colorHex: p.color_hex })),
+        { key: "unassigned", label: "Unassigned", colorHex: "#6B7280" },
+      ]
+    : config.columns
+
   const groups = new Map()
 
-  for (const col of config.columns) {
+  for (const col of columns) {
     groups.set(col.key, { ...col, actions: [] })
   }
 
@@ -65,7 +80,7 @@ export function groupActions(actions, groupBy, uuidToTeam) {
     if (group) {
       group.actions.push(action)
     } else {
-      const fallback = groups.values().next().value
+      const fallback = groups.get("unassigned") || groups.values().next().value
       if (fallback) fallback.actions.push(action)
     }
   }
@@ -74,6 +89,6 @@ export function groupActions(actions, groupBy, uuidToTeam) {
 }
 
 export function getGroupFieldName(groupBy) {
-  const map = { status: "status", channel: "channel", priority: "priority", team: null }
+  const map = { status: "status", channel: "channel", priority: "priority", team: null, phase: "phase_id" }
   return map[groupBy] ?? "status"
 }

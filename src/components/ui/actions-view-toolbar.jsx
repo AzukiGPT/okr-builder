@@ -12,6 +12,7 @@ const GROUP_OPTIONS = [
   { key: "status", label: "Status" },
   { key: "channel", label: "Channel" },
   { key: "priority", label: "Priority" },
+  { key: "phase", label: "Phase" },
   { key: "team", label: "Team" },
 ]
 

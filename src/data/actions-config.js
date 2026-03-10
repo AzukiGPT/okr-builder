@@ -31,3 +31,11 @@ export const ACTION_PRIORITIES = {
   high: { label: "High", colorHex: "#EF4444" },
   critical: { label: "Critical", colorHex: "#DC2626" },
 }
+
+export const DEFAULT_PHASES = [
+  { key: "audit", name: "Audit & Research", position: 0, colorHex: "#06B6D4" },
+  { key: "setup", name: "Foundation & Setup", position: 1, colorHex: "#8B5CF6" },
+  { key: "launch", name: "Launch & Execution", position: 2, colorHex: "#F59E0B" },
+  { key: "optimize", name: "Optimize & Iterate", position: 3, colorHex: "#22C55E" },
+  { key: "scale", name: "Scale & Expand", position: 4, colorHex: "#EC4899" },
+]

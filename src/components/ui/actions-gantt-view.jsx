@@ -2,6 +2,7 @@ import { useRef, useEffect, useMemo } from "react"
 import Gantt from "frappe-gantt"
 import "../../styles/frappe-gantt.css"
 import { ACTION_CHANNELS, ACTION_STATUSES } from "../../data/actions-config"
+import { computeSchedule } from "../../utils/computeSchedule"
 
 function toGanttTasks(actions) {
   return actions
@@ -21,7 +22,7 @@ function toGanttTasks(actions) {
     })
 }
 
-export default function ActionsGanttView({ actions, onUpdateAction, onEdit }) {
+export default function ActionsGanttView({ actions, phases, onUpdateAction, onEdit }) {
   const containerRef = useRef(null)
   const ganttRef = useRef(null)
   const callbackRef = useRef({ onUpdateAction, onEdit })
@@ -31,10 +32,14 @@ export default function ActionsGanttView({ actions, onUpdateAction, onEdit }) {
     callbackRef.current = { onUpdateAction, onEdit }
   }, [onUpdateAction, onEdit])
 
-  const scheduled = useMemo(() => toGanttTasks(actions), [actions])
+  const autoScheduled = useMemo(
+    () => (phases?.length > 0 ? computeSchedule(phases, actions) : actions),
+    [phases, actions]
+  )
+  const scheduled = useMemo(() => toGanttTasks(autoScheduled), [autoScheduled])
   const unscheduled = useMemo(
-    () => actions.filter((a) => !a.start_date || !a.end_date),
-    [actions]
+    () => autoScheduled.filter((a) => !a.start_date || !a.end_date),
+    [autoScheduled]
   )
 
   useEffect(() => {

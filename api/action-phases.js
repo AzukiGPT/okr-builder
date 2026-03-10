@@ -11,7 +11,7 @@ function json(data, statusCode = 200, req) {
   })
 }
 
-/** Check user has at least editor access to a set */
+/** Check user has at least the required access to a set */
 async function checkSetAccess(userId, setId, minRole = "editor") {
   const { data: member } = await supabaseAdmin
     .from("set_members")
@@ -49,96 +49,42 @@ async function handleGet(req, user) {
   const access = await checkSetAccess(user.id, setId, "viewer")
   if (!access.allowed) return json({ error: "Forbidden" }, 403, req)
 
-  const actionId = url.searchParams.get("id")
-
-  // Single action with KR links
-  if (actionId) {
-    const { data: action, error } = await supabaseAdmin
-      .from("actions")
-      .select("*, action_kr_links(set_kr_id)")
-      .eq("id", actionId)
-      .eq("set_id", setId)
-      .single()
-
-    if (error) return json({ error: error.message }, 500, req)
-    if (!action) return json({ error: "Not found" }, 404, req)
-
-    return json({
-      data: {
-        ...action,
-        kr_ids: (action.action_kr_links || []).map((l) => l.set_kr_id),
-        action_kr_links: undefined,
-      },
-    }, 200, req)
-  }
-
-  // List all actions for this set
-  const { data: actions, error } = await supabaseAdmin
-    .from("actions")
-    .select("*, action_kr_links(set_kr_id)")
+  const { data: phases, error } = await supabaseAdmin
+    .from("action_phases")
+    .select("*")
     .eq("set_id", setId)
-    .order("created_at", { ascending: false })
+    .order("position", { ascending: true })
 
   if (error) return json({ error: error.message }, 500, req)
 
-  const enriched = (actions || []).map((a) => ({
-    ...a,
-    kr_ids: (a.action_kr_links || []).map((l) => l.set_kr_id),
-    action_kr_links: undefined,
-  }))
-
-  return json({ data: enriched }, 200, req)
+  return json({ data: phases || [] }, 200, req)
 }
 
 // ─── POST ────────────────────────────────────────────────────
 async function handlePost(req, user) {
   const body = await req.json()
-  const { set_id, title, description, channel, action_type, assignee_id,
-    priority, start_date, end_date, budget_estimated, currency,
-    source, template_id, kr_ids, phase_id, estimated_days } = body
+  const { set_id, name, position, color_hex } = body
 
   if (!set_id) return json({ error: "Missing set_id" }, 400, req)
-  if (!title) return json({ error: "Missing title" }, 400, req)
+  if (!name) return json({ error: "Missing name" }, 400, req)
 
   const access = await checkSetAccess(user.id, set_id)
   if (!access.allowed) return json({ error: "Forbidden" }, 403, req)
 
-  const { data: action, error } = await supabaseAdmin
-    .from("actions")
+  const { data: phase, error } = await supabaseAdmin
+    .from("action_phases")
     .insert({
       set_id,
-      title,
-      description: description || null,
-      channel: channel || null,
-      action_type: action_type || null,
-      assignee_id: assignee_id || null,
-      status: "todo",
-      priority: priority || "medium",
-      start_date: start_date || null,
-      end_date: end_date || null,
-      budget_estimated: budget_estimated || null,
-      currency: currency || "EUR",
-      source: source || "manual",
-      template_id: template_id || null,
-      phase_id: phase_id || null,
-      estimated_days: estimated_days || 5,
-      created_by: user.id,
+      name,
+      position: position ?? 0,
+      color_hex: color_hex || null,
     })
     .select("*")
     .single()
 
   if (error) return json({ error: error.message }, 500, req)
 
-  // Link to KRs if provided
-  if (Array.isArray(kr_ids) && kr_ids.length > 0) {
-    const links = kr_ids.map((krId) => ({
-      action_id: action.id,
-      set_kr_id: krId,
-    }))
-    await supabaseAdmin.from("action_kr_links").insert(links)
-  }
-
-  return json({ data: { ...action, kr_ids: kr_ids || [] } }, 201, req)
+  return json({ data: phase }, 201, req)
 }
 
 // ─── PUT ─────────────────────────────────────────────────────
@@ -147,9 +93,9 @@ async function handlePut(req, user) {
   const id = url.searchParams.get("id")
   if (!id) return json({ error: "Missing id parameter" }, 400, req)
 
-  // Get the action to check set_id
+  // Get the phase to check set_id
   const { data: existing } = await supabaseAdmin
-    .from("actions")
+    .from("action_phases")
     .select("set_id")
     .eq("id", id)
     .single()
@@ -160,28 +106,15 @@ async function handlePut(req, user) {
   if (!access.allowed) return json({ error: "Forbidden" }, 403, req)
 
   const body = await req.json()
-  const { title, description, channel, action_type, assignee_id, status,
-    priority, start_date, end_date, budget_estimated, budget_actual,
-    currency, kr_ids, phase_id, estimated_days } = body
+  const { name, position, color_hex } = body
 
   const updates = { updated_at: new Date().toISOString() }
-  if (title !== undefined) updates.title = title
-  if (description !== undefined) updates.description = description
-  if (channel !== undefined) updates.channel = channel
-  if (action_type !== undefined) updates.action_type = action_type
-  if (assignee_id !== undefined) updates.assignee_id = assignee_id
-  if (status !== undefined) updates.status = status
-  if (priority !== undefined) updates.priority = priority
-  if (start_date !== undefined) updates.start_date = start_date
-  if (end_date !== undefined) updates.end_date = end_date
-  if (budget_estimated !== undefined) updates.budget_estimated = budget_estimated
-  if (budget_actual !== undefined) updates.budget_actual = budget_actual
-  if (currency !== undefined) updates.currency = currency
-  if (phase_id !== undefined) updates.phase_id = phase_id
-  if (estimated_days !== undefined) updates.estimated_days = estimated_days
+  if (name !== undefined) updates.name = name
+  if (position !== undefined) updates.position = position
+  if (color_hex !== undefined) updates.color_hex = color_hex
 
-  const { data: action, error } = await supabaseAdmin
-    .from("actions")
+  const { data: phase, error } = await supabaseAdmin
+    .from("action_phases")
     .update(updates)
     .eq("id", id)
     .select("*")
@@ -189,20 +122,7 @@ async function handlePut(req, user) {
 
   if (error) return json({ error: error.message }, 500, req)
 
-  // Update KR links if provided
-  if (Array.isArray(kr_ids)) {
-    await supabaseAdmin.from("action_kr_links").delete().eq("action_id", id)
-
-    if (kr_ids.length > 0) {
-      const links = kr_ids.map((krId) => ({
-        action_id: id,
-        set_kr_id: krId,
-      }))
-      await supabaseAdmin.from("action_kr_links").insert(links)
-    }
-  }
-
-  return json({ data: { ...action, kr_ids: kr_ids || [] } }, 200, req)
+  return json({ data: phase }, 200, req)
 }
 
 // ─── DELETE ──────────────────────────────────────────────────
@@ -212,7 +132,7 @@ async function handleDelete(req, user) {
   if (!id) return json({ error: "Missing id parameter" }, 400, req)
 
   const { data: existing } = await supabaseAdmin
-    .from("actions")
+    .from("action_phases")
     .select("set_id")
     .eq("id", id)
     .single()
@@ -222,9 +142,8 @@ async function handleDelete(req, user) {
   const access = await checkSetAccess(user.id, existing.set_id)
   if (!access.allowed) return json({ error: "Forbidden" }, 403, req)
 
-  // CASCADE deletes action_kr_links
   const { error } = await supabaseAdmin
-    .from("actions")
+    .from("action_phases")
     .delete()
     .eq("id", id)
 

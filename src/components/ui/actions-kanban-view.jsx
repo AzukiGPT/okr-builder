@@ -7,6 +7,7 @@ import {
   useSensor,
   useSensors,
   closestCorners,
+  useDroppable,
 } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
@@ -32,6 +33,8 @@ function SortableCard({ action, onEdit, onDelete }) {
 }
 
 function KanbanColumn({ group, onEdit, onDelete }) {
+  const { setNodeRef, isOver } = useDroppable({ id: group.key })
+
   return (
     <div className="flex-shrink-0 w-64 flex flex-col">
       <div
@@ -45,7 +48,12 @@ function KanbanColumn({ group, onEdit, onDelete }) {
           {group.actions.length}
         </span>
       </div>
-      <div className="flex-1 rounded-b-lg border border-t-0 border-border bg-muted/20 p-2 space-y-2 min-h-[120px]">
+      <div
+        ref={setNodeRef}
+        className={`flex-1 rounded-b-lg border border-t-0 border-border p-2 space-y-2 min-h-[120px] transition-colors ${
+          isOver ? "bg-primary/5 border-primary/30" : "bg-muted/20"
+        }`}
+      >
         <SortableContext
           items={group.actions.map((a) => a.id)}
           strategy={verticalListSortingStrategy}
@@ -73,12 +81,13 @@ export default function ActionsKanbanView({
   actions,
   groupBy,
   uuidToTeam,
+  phases,
   onEdit,
   onDelete,
   onUpdateAction,
 }) {
   const [activeId, setActiveId] = useState(null)
-  const groups = groupActions(actions, groupBy, uuidToTeam)
+  const groups = groupActions(actions, groupBy, uuidToTeam, phases)
   const fieldName = getGroupFieldName(groupBy)
 
   const sensors = useSensors(

@@ -23,7 +23,7 @@ function SelectField({ label, value, onChange, options }) {
   )
 }
 
-export default function ActionForm({ onSubmit, onCancel, initialData, selected, krStatuses }) {
+export default function ActionForm({ onSubmit, onCancel, initialData, selected, krStatuses, phases }) {
   const [title, setTitle] = useState(initialData?.title || "")
   const [description, setDescription] = useState(initialData?.description || "")
   const [channel, setChannel] = useState(initialData?.channel || "")
@@ -34,6 +34,8 @@ export default function ActionForm({ onSubmit, onCancel, initialData, selected, 
   const [budgetEstimated, setBudgetEstimated] = useState(initialData?.budget_estimated || "")
   const [currency, setCurrency] = useState(initialData?.currency || "EUR")
   const [selectedKRs, setSelectedKRs] = useState(initialData?.kr_ids || [])
+  const [phaseId, setPhaseId] = useState(initialData?.phase_id || "")
+  const [estimatedDays, setEstimatedDays] = useState(initialData?.estimated_days || 10)
 
   const toggleKR = (uuid) => {
     setSelectedKRs((prev) =>
@@ -55,6 +57,8 @@ export default function ActionForm({ onSubmit, onCancel, initialData, selected, 
       end_date: endDate || null,
       budget_estimated: budgetEstimated ? Number(budgetEstimated) : null,
       currency,
+      phase_id: phaseId || null,
+      estimated_days: estimatedDays ? Number(estimatedDays) : 5,
       kr_ids: selectedKRs,
       source: initialData?.source || "manual",
       template_id: initialData?.template_id || null,
@@ -97,6 +101,33 @@ export default function ActionForm({ onSubmit, onCancel, initialData, selected, 
         <SelectField label="Channel" value={channel} onChange={setChannel} options={channelOptions} />
         <SelectField label="Type" value={actionType} onChange={setActionType} options={typeOptions} />
         <SelectField label="Priority" value={priority} onChange={setPriority} options={priorityOptions} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <label className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">Phase</label>
+          <select
+            value={phaseId}
+            onChange={(e) => setPhaseId(e.target.value)}
+            className="w-full px-2 py-1.5 border rounded text-xs bg-background border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+          >
+            <option value="">-- no phase --</option>
+            {(phases || []).map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">Est. days</label>
+          <input
+            type="number"
+            min={1}
+            max={90}
+            value={estimatedDays}
+            onChange={(e) => setEstimatedDays(e.target.value)}
+            className="w-full px-2 py-1.5 border rounded text-xs bg-background border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
