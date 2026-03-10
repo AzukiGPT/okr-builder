@@ -15,6 +15,7 @@ export default function GanttPhaseGroup({
   zoom,
   onUpdateAction,
   onEdit,
+  onDependencyDragStart,
 }) {
 
   const barMap = useMemo(() => {
@@ -72,6 +73,7 @@ export default function GanttPhaseGroup({
                     zoom={zoom}
                     onUpdateAction={onUpdateAction}
                     onEdit={onEdit}
+                    onDependencyDragStart={onDependencyDragStart}
                   />
                 )}
               </div>

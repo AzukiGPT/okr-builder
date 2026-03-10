@@ -15,6 +15,7 @@ export default function GanttBar({
   zoom,
   onUpdateAction,
   onEdit,
+  onDependencyDragStart,
 }) {
   const [dragState, setDragState] = useState(null) // { mode, startX, origLeft, origWidth }
   const barRef = useRef(null)
@@ -139,6 +140,19 @@ export default function GanttBar({
         className="absolute right-0 top-0 bottom-0 cursor-ew-resize z-10 opacity-0 group-hover:opacity-100 transition-opacity"
         style={{ width: EDGE_WIDTH }}
         onPointerDown={(e) => handlePointerDown(e, "resize-right")}
+      />
+
+      {/* Dependency anchor (right edge) — visible on hover */}
+      <div
+        className="absolute right-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary opacity-0 group-hover:opacity-60 hover:!opacity-100 cursor-crosshair z-20 transition-opacity"
+        onPointerDown={(e) => {
+          if (onDependencyDragStart) {
+            e.preventDefault()
+            e.stopPropagation()
+            const rect = e.currentTarget.getBoundingClientRect()
+            onDependencyDragStart(action.id, rect.left + rect.width / 2, rect.top + rect.height / 2)
+          }
+        }}
       />
     </div>
   )

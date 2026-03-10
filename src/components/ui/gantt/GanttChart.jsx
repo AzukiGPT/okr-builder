@@ -3,6 +3,8 @@ import { Calendar, ZoomIn, ZoomOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import GanttHeader from "./GanttHeader"
 import GanttPhaseGroup from "./GanttPhaseGroup"
+import GanttArrows from "./GanttArrows"
+import { DependencyCreator } from "./DependencyCreator"
 import {
   computeTimelineRange,
   generateHeaderCells,
@@ -15,7 +17,7 @@ import { ROW_HEIGHT } from "./GanttBar"
 const TITLE_COL_WIDTH = 200
 const ZOOM_KEYS = Object.keys(ZOOM_LEVELS)
 
-export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) {
+export default function GanttChart({ actions, phases, onUpdateAction, onEdit, dependencies, onCreateDependency, onDeleteDependency }) {
   const [zoom, setZoom] = useState("week")
   const [collapsedPhases, setCollapsedPhases] = useState(new Set())
   const scrollRef = useRef(null)
@@ -88,6 +90,33 @@ export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) 
       return next
     })
   }, [])
+
+  const [depDragState, setDepDragState] = useState(null)
+
+  const handleDepDragStart = useCallback((fromId, fromX, fromY) => {
+    setDepDragState({ fromId, fromX, fromY, currentX: fromX, currentY: fromY })
+  }, [])
+
+  const handleDepDragMove = useCallback((e) => {
+    if (!depDragState) return
+    const scrollEl = scrollRef.current
+    if (!scrollEl) return
+    const rect = scrollEl.getBoundingClientRect()
+    setDepDragState((prev) => ({
+      ...prev,
+      currentX: e.clientX - rect.left + scrollEl.scrollLeft,
+      currentY: e.clientY - rect.top + scrollEl.scrollTop,
+    }))
+  }, [depDragState])
+
+  const handleDepDragEnd = useCallback(() => {
+    setDepDragState(null)
+  }, [])
+
+  const handleDepComplete = useCallback(async (payload) => {
+    if (onCreateDependency) await onCreateDependency(payload)
+    setDepDragState(null)
+  }, [onCreateDependency])
 
   if (actions.length === 0) {
     return (
@@ -172,7 +201,7 @@ export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) 
           </div>
 
           {/* Scrollable timeline area */}
-          <div ref={scrollRef} className="overflow-x-auto flex-1">
+          <div ref={scrollRef} className="overflow-x-auto flex-1" onPointerMove={handleDepDragMove} onPointerUp={handleDepDragEnd}>
             <div style={{ width: timelineWidth, minWidth: "100%" }}>
               {/* Header */}
               <GanttHeader
@@ -198,8 +227,28 @@ export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) 
                   zoom={zoom}
                   onUpdateAction={onUpdateAction}
                   onEdit={onEdit}
+                  onDependencyDragStart={handleDepDragStart}
                 />
               ))}
+
+              {/* Dependency arrows overlay */}
+              <GanttArrows
+                dependencies={dependencies}
+                actions={actions}
+                phases={phases}
+                timelineStart={timelineStart}
+                timelineWidth={timelineWidth}
+                columnWidth={columnWidth}
+                zoom={zoom}
+                onDeleteDependency={onDeleteDependency}
+              />
+
+              {/* Drag-to-create dependency */}
+              <DependencyCreator
+                dragState={depDragState}
+                onComplete={handleDepComplete}
+                onCancel={handleDepDragEnd}
+              />
             </div>
           </div>
         </div>
