@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useMemo } from "react"
 import { ChevronRight } from "lucide-react"
 import GanttBar from "./GanttBar"
 import { computeBarPosition } from "./gantt-utils"
@@ -7,6 +7,8 @@ import { ROW_HEIGHT } from "./GanttBar"
 export default function GanttPhaseGroup({
   phase,
   actions,
+  collapsed,
+  onToggleCollapse,
   timelineStart,
   timelineWidth,
   columnWidth,
@@ -14,7 +16,6 @@ export default function GanttPhaseGroup({
   onUpdateAction,
   onEdit,
 }) {
-  const [collapsed, setCollapsed] = useState(false)
 
   const bars = useMemo(() => {
     return actions
@@ -35,7 +36,7 @@ export default function GanttPhaseGroup({
       <div
         className="sticky left-0 flex items-center gap-2 px-3 py-1.5 cursor-pointer select-none z-10 border-b border-border"
         style={{ backgroundColor: `${phase.color_hex}15` }}
-        onClick={() => setCollapsed((c) => !c)}
+        onClick={onToggleCollapse}
       >
         <ChevronRight
           className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${collapsed ? "" : "rotate-90"}`}

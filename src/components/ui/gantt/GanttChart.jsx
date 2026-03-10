@@ -16,6 +16,7 @@ const TITLE_COL_WIDTH = 200
 
 export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) {
   const [zoom, setZoom] = useState("week")
+  const [collapsedPhases, setCollapsedPhases] = useState(new Set())
   const scrollRef = useRef(null)
 
   const zoomCfg = ZOOM_LEVELS[zoom]
@@ -72,9 +73,19 @@ export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) 
     if (currentIndex < zoomKeys.length - 1) setZoom(zoomKeys[currentIndex + 1])
   }, [currentIndex, zoomKeys])
 
-  const scheduledActions = actions.filter((a) => a.start_date && a.end_date)
+  const togglePhase = useCallback((phaseId) => {
+    setCollapsedPhases((prev) => {
+      const next = new Set(prev)
+      if (next.has(phaseId)) {
+        next.delete(phaseId)
+      } else {
+        next.add(phaseId)
+      }
+      return next
+    })
+  }, [])
 
-  if (scheduledActions.length === 0 && actions.length === 0) {
+  if (actions.length === 0) {
     return (
       <div className="rounded-xl border-2 border-dashed border-border bg-card/50 p-12 text-center">
         <p className="text-muted-foreground text-sm">
@@ -141,8 +152,8 @@ export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) 
                   />
                   <span className="text-xs font-semibold text-foreground truncate">{group.phase.name}</span>
                 </div>
-                {/* Action title rows */}
-                {group.actions.map((action) => (
+                {/* Action title rows (hidden when phase is collapsed) */}
+                {!collapsedPhases.has(group.phase.id) && group.actions.map((action) => (
                   <div
                     key={action.id}
                     className="flex items-center px-3 border-b border-border/50 cursor-pointer hover:bg-muted/30 transition-colors"
@@ -175,6 +186,8 @@ export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) 
                   key={group.phase.id}
                   phase={group.phase}
                   actions={group.actions}
+                  collapsed={collapsedPhases.has(group.phase.id)}
+                  onToggleCollapse={() => togglePhase(group.phase.id)}
                   timelineStart={timelineStart}
                   timelineWidth={timelineWidth}
                   columnWidth={columnWidth}
