@@ -1,147 +1,34 @@
-import { useRef, useEffect, useMemo } from "react"
-import Gantt from "frappe-gantt"
-import "../../styles/frappe-gantt.css"
-import { ACTION_CHANNELS, ACTION_STATUSES } from "../../data/actions-config"
+import { useMemo } from "react"
 import { computeSchedule } from "../../utils/computeSchedule"
-
-function toGanttTasks(actions) {
-  return actions
-    .filter((a) => a.start_date && a.end_date)
-    .map((a) => {
-      const channel = ACTION_CHANNELS[a.channel]
-      const status = ACTION_STATUSES[a.status]
-      return {
-        id: a.id,
-        name: a.title,
-        start: a.start_date,
-        end: a.end_date,
-        progress: a.status === "done" ? 100 : a.status === "in_progress" ? 50 : 0,
-        custom_class: `gantt-bar--${a.channel || "default"}`,
-        _color: channel?.colorHex || status?.colorHex || "#8B5CF6",
-      }
-    })
-}
+import GanttChart from "./gantt/GanttChart"
 
 export default function ActionsGanttView({ actions, phases, onUpdateAction, onEdit }) {
-  const containerRef = useRef(null)
-  const ganttRef = useRef(null)
-  const callbackRef = useRef({ onUpdateAction, onEdit })
-
-  // Keep callbacks fresh without re-creating Gantt
-  useEffect(() => {
-    callbackRef.current = { onUpdateAction, onEdit }
-  }, [onUpdateAction, onEdit])
-
-  const autoScheduled = useMemo(
+  // Auto-schedule actions that don't have dates using phase order
+  const scheduled = useMemo(
     () => (phases?.length > 0 ? computeSchedule(phases, actions) : actions),
     [phases, actions]
   )
-  const scheduled = useMemo(() => toGanttTasks(autoScheduled), [autoScheduled])
-  const unscheduled = useMemo(
-    () => autoScheduled.filter((a) => !a.start_date || !a.end_date),
-    [autoScheduled]
-  )
 
-  useEffect(() => {
-    if (!containerRef.current || scheduled.length === 0) {
-      ganttRef.current = null
-      return
-    }
-
-    try {
-      ganttRef.current = new Gantt(containerRef.current, scheduled, {
-        view_mode: "Week",
-        date_format: "YYYY-MM-DD",
-        language: "fr",
-        on_click: (task) => {
-          const action = actions.find((a) => a.id === task.id)
-          if (action) callbackRef.current.onEdit(action)
-        },
-        on_date_change: (task, start, end) => {
-          const startStr = start.toISOString().split("T")[0]
-          const endStr = end.toISOString().split("T")[0]
-          callbackRef.current.onUpdateAction(task.id, {
-            start_date: startStr,
-            end_date: endStr,
-          })
-        },
-        on_progress_change: () => {
-          // Ignore native progress changes, we manage status separately
-        },
-      })
-    } catch {
-      ganttRef.current = null
-    }
-
-    return () => {
-      ganttRef.current = null
-    }
-  }, [scheduled, actions])
-
-  // Inject custom bar colors after Gantt renders
-  useEffect(() => {
-    if (!containerRef.current) return
-    const bars = containerRef.current.querySelectorAll(".bar-wrapper")
-    bars.forEach((bar, i) => {
-      if (scheduled[i]?._color) {
-        const rect = bar.querySelector(".bar")
-        if (rect) {
-          rect.style.fill = scheduled[i]._color
-          rect.style.opacity = "0.8"
-        }
-        const progress = bar.querySelector(".bar-progress")
-        if (progress) {
-          progress.style.fill = scheduled[i]._color
-        }
-      }
-    })
-  }, [scheduled])
-
-  // Prevent vertical scroll from being hijacked as horizontal navigation.
-  // Vertical deltaY should scroll the container rows, not change the timeline.
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-
-    function handleWheel(e) {
-      const absX = Math.abs(e.deltaX)
-      const absY = Math.abs(e.deltaY)
-
-      // If scroll is primarily vertical, prevent frappe-gantt from intercepting
-      // and let the browser scroll the container vertically instead
-      if (absY > absX) {
-        e.stopPropagation()
-        // Let default vertical scroll happen on the container
-      }
-    }
-
-    // Capture phase so we intercept before frappe-gantt's handler
-    el.addEventListener("wheel", handleWheel, { passive: true, capture: true })
-    return () => el.removeEventListener("wheel", handleWheel, { capture: true })
-  }, [scheduled])
+  // Split into scheduled (have dates) and unscheduled
+  const withDates = useMemo(() => scheduled.filter((a) => a.start_date && a.end_date), [scheduled])
+  const withoutDates = useMemo(() => scheduled.filter((a) => !a.start_date || !a.end_date), [scheduled])
 
   return (
     <div className="space-y-4">
-      {scheduled.length > 0 ? (
-        <div
-          ref={containerRef}
-          className="rounded-lg border border-border overflow-x-auto bg-card gantt-container"
-        />
-      ) : (
-        <div className="rounded-xl border-2 border-dashed border-border bg-card/50 p-12 text-center">
-          <p className="text-muted-foreground text-sm">
-            No actions with dates yet. Add start and end dates to see the Gantt chart.
-          </p>
-        </div>
-      )}
+      <GanttChart
+        actions={withDates}
+        phases={phases}
+        onUpdateAction={onUpdateAction}
+        onEdit={onEdit}
+      />
 
-      {unscheduled.length > 0 && (
+      {withoutDates.length > 0 && (
         <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
           <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">
-            Unscheduled ({unscheduled.length})
+            Unscheduled ({withoutDates.length})
           </p>
           <div className="flex flex-wrap gap-2">
-            {unscheduled.map((a) => (
+            {withoutDates.map((a) => (
               <button
                 key={a.id}
                 type="button"
@@ -152,9 +39,7 @@ export default function ActionsGanttView({ actions, phases, onUpdateAction, onEd
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            Click to edit and add dates.
-          </p>
+          <p className="text-[10px] text-muted-foreground">Click to edit and add dates.</p>
         </div>
       )}
     </div>
