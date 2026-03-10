@@ -138,6 +138,22 @@ export default function ActionsStep({
     await onBatchCreateActions(payloads)
   }, [onBatchCreateActions, resolveKrUuids, resolvePhaseId])
 
+  const handleEditTemplate = useCallback((tpl) => {
+    setEditingAction({
+      title: tpl.title,
+      description: tpl.description,
+      channel: tpl.channel,
+      action_type: tpl.action_type,
+      source: "template",
+      template_id: tpl.id,
+      priority: "medium",
+      kr_ids: resolveKrUuids(tpl.relevant_kr_ids),
+      phase_id: resolvePhaseId(tpl.default_phase),
+      estimated_days: tpl.estimated_days || 10,
+    })
+    setShowForm(false)
+  }, [resolveKrUuids, resolvePhaseId])
+
   const handleAddAction = useCallback(() => {
     setShowForm(true)
     setEditingAction(null)
@@ -344,6 +360,7 @@ export default function ActionsStep({
           templates={templates}
           existingTemplateIds={existingTemplateIds}
           onAddFromTemplate={handleAddFromTemplate}
+          onEditTemplate={handleEditTemplate}
           onBatchAdd={handleBatchAdd}
         />
       )}

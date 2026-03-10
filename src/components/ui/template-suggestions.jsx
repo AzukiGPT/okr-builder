@@ -38,13 +38,13 @@ const TEAM_LABELS = {
 }
 
 export default function TemplateSuggestions({
-  templates, onAddFromTemplate, onBatchAdd, existingTemplateIds,
+  templates, onAddFromTemplate, onBatchAdd, onEditTemplate, existingTemplateIds,
 }) {
   const [batchAdding, setBatchAdding] = useState(false)
   const [batchAddingKr, setBatchAddingKr] = useState(null)
   const [addingId, setAddingId] = useState(null)
   const [justAdded, setJustAdded] = useState(new Set())
-  const [collapsedKrs, setCollapsedKrs] = useState(new Set())
+  const [expandedKrs, setExpandedKrs] = useState(new Set())
 
   const newTemplates = useMemo(() => {
     if (!existingTemplateIds) return templates || []
@@ -118,7 +118,7 @@ export default function TemplateSuggestions({
   }
 
   const toggleKr = (krId) => {
-    setCollapsedKrs((prev) => {
+    setExpandedKrs((prev) => {
       const next = new Set(prev)
       if (next.has(krId)) next.delete(krId)
       else next.add(krId)
@@ -159,7 +159,7 @@ export default function TemplateSuggestions({
       {/* KR Groups */}
       {krGroups.map((group) => {
         const { krId, krInfo, templates: krTemplates } = group
-        const isCollapsed = collapsedKrs.has(krId)
+        const isCollapsed = !expandedKrs.has(krId)
         const remainingCount = krTemplates.filter((t) => !justAdded.has(t.id)).length
         const teamColor = krInfo ? TEAM_COLORS[krInfo.team] || "#6B7280" : "#6B7280"
         const teamLabel = krInfo ? TEAM_LABELS[krInfo.team] || krInfo.team : ""
@@ -231,8 +231,9 @@ export default function TemplateSuggestions({
                       className={`rounded-lg border p-3 space-y-2 transition-colors ${
                         wasAdded
                           ? "border-emerald-200 bg-emerald-50/30"
-                          : "border-border bg-card/50 hover:border-amber-300"
+                          : "border-border bg-card/50 hover:border-amber-300 cursor-pointer"
                       }`}
+                      onClick={() => !wasAdded && onEditTemplate && onEditTemplate(tpl)}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="font-semibold text-xs text-foreground leading-tight flex-1">
@@ -240,7 +241,7 @@ export default function TemplateSuggestions({
                         </h4>
                         <button
                           type="button"
-                          onClick={() => handleSingleAdd(tpl)}
+                          onClick={(e) => { e.stopPropagation(); handleSingleAdd(tpl) }}
                           disabled={isAdding || wasAdded || anyBusy}
                           className={`shrink-0 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold transition-colors cursor-pointer ${
                             wasAdded
