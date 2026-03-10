@@ -1,12 +1,14 @@
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { ACTION_CHANNELS } from "../../data/actions-config"
-import { Sparkles, Plus, Zap, Loader2 } from "lucide-react"
+import { Sparkles, Plus, Zap, Loader2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function TemplateSuggestions({
   templates, onAddFromTemplate, onBatchAdd, existingTemplateIds,
 }) {
   const [batchAdding, setBatchAdding] = useState(false)
+  const [addingId, setAddingId] = useState(null)
+  const [justAdded, setJustAdded] = useState(new Set())
 
   if (!templates || templates.length === 0) return null
 
@@ -21,6 +23,16 @@ export default function TemplateSuggestions({
       await onBatchAdd(newTemplates)
     } finally {
       setBatchAdding(false)
+    }
+  }
+
+  const handleSingleAdd = async (tpl) => {
+    setAddingId(tpl.id)
+    try {
+      await onAddFromTemplate(tpl)
+      setJustAdded((prev) => new Set([...prev, tpl.id]))
+    } finally {
+      setAddingId(null)
     }
   }
 
@@ -54,6 +66,8 @@ export default function TemplateSuggestions({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {newTemplates.map((tpl) => {
           const channel = ACTION_CHANNELS[tpl.channel]
+          const isAdding = addingId === tpl.id
+          const wasAdded = justAdded.has(tpl.id)
 
           return (
             <div
@@ -65,11 +79,22 @@ export default function TemplateSuggestions({
                   {tpl.title}
                 </h4>
                 <button
-                  onClick={() => onAddFromTemplate(tpl)}
-                  className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                  onClick={() => handleSingleAdd(tpl)}
+                  disabled={isAdding || wasAdded || batchAdding}
+                  className={`shrink-0 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold transition-colors cursor-pointer ${
+                    wasAdded
+                      ? "bg-emerald-100 text-emerald-600"
+                      : "bg-primary/10 text-primary hover:bg-primary/20"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  <Plus className="w-3 h-3" />
-                  Add
+                  {isAdding ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : wasAdded ? (
+                    <Check className="w-3 h-3" />
+                  ) : (
+                    <Plus className="w-3 h-3" />
+                  )}
+                  {isAdding ? "..." : wasAdded ? "Added" : "Add"}
                 </button>
               </div>
 

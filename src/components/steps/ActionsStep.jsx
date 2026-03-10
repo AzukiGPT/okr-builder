@@ -86,9 +86,8 @@ export default function ActionsStep({
     return ids
   }, [actions])
 
-  const handleAddFromTemplate = useCallback((tpl) => {
-    const krUuids = resolveKrUuids(tpl.relevant_kr_ids)
-    setEditingAction({
+  const handleAddFromTemplate = useCallback(async (tpl) => {
+    await onCreateAction({
       title: tpl.title,
       description: tpl.description,
       channel: tpl.channel,
@@ -96,10 +95,9 @@ export default function ActionsStep({
       source: "template",
       template_id: tpl.id,
       priority: "medium",
-      kr_ids: krUuids,
+      kr_ids: resolveKrUuids(tpl.relevant_kr_ids),
     })
-    setShowForm(false)
-  }, [resolveKrUuids])
+  }, [onCreateAction, resolveKrUuids])
 
   const handleBatchAdd = useCallback(async (templatesToAdd) => {
     if (!onBatchCreateActions) return
