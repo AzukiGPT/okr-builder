@@ -97,6 +97,29 @@ export default function ActionsGanttView({ actions, phases, onUpdateAction, onEd
     })
   }, [scheduled])
 
+  // Prevent vertical scroll from being hijacked as horizontal navigation.
+  // Vertical deltaY should scroll the container rows, not change the timeline.
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    function handleWheel(e) {
+      const absX = Math.abs(e.deltaX)
+      const absY = Math.abs(e.deltaY)
+
+      // If scroll is primarily vertical, prevent frappe-gantt from intercepting
+      // and let the browser scroll the container vertically instead
+      if (absY > absX) {
+        e.stopPropagation()
+        // Let default vertical scroll happen on the container
+      }
+    }
+
+    // Capture phase so we intercept before frappe-gantt's handler
+    el.addEventListener("wheel", handleWheel, { passive: true, capture: true })
+    return () => el.removeEventListener("wheel", handleWheel, { capture: true })
+  }, [scheduled])
+
   return (
     <div className="space-y-4">
       {scheduled.length > 0 ? (
