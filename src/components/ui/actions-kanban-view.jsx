@@ -14,7 +14,7 @@ import { CSS } from "@dnd-kit/utilities"
 import { groupActions, getGroupFieldName } from "../../utils/groupActions"
 import ActionCard from "./action-card"
 
-function SortableCard({ action, onEdit, onDelete }) {
+function SortableCard({ action, onEdit, onDelete, krStatuses, phases }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: action.id,
   })
@@ -27,12 +27,12 @@ function SortableCard({ action, onEdit, onDelete }) {
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <ActionCard action={action} onEdit={onEdit} onDelete={onDelete} compact />
+      <ActionCard action={action} onEdit={onEdit} onDelete={onDelete} krStatuses={krStatuses} phases={phases} compact />
     </div>
   )
 }
 
-function KanbanColumn({ group, onEdit, onDelete }) {
+function KanbanColumn({ group, onEdit, onDelete, krStatuses, phases }) {
   const { setNodeRef, isOver } = useDroppable({ id: group.key })
 
   return (
@@ -64,6 +64,8 @@ function KanbanColumn({ group, onEdit, onDelete }) {
               action={action}
               onEdit={onEdit}
               onDelete={onDelete}
+              krStatuses={krStatuses}
+              phases={phases}
             />
           ))}
         </SortableContext>
@@ -152,11 +154,13 @@ export default function ActionsKanbanView({
             group={group}
             onEdit={onEdit}
             onDelete={onDelete}
+            krStatuses={krStatuses}
+            phases={phases}
           />
         ))}
       </div>
       <DragOverlay>
-        {activeAction ? <ActionCard action={activeAction} onEdit={() => {}} onDelete={() => {}} compact /> : null}
+        {activeAction ? <ActionCard action={activeAction} onEdit={() => {}} onDelete={() => {}} krStatuses={krStatuses} phases={phases} compact /> : null}
       </DragOverlay>
     </DndContext>
   )

@@ -275,6 +275,8 @@ export default function ActionsStep({
           onEdit={handleEdit}
           onDelete={handleDelete}
           onUpdateAction={handleInlineUpdate}
+          krStatuses={krStatuses}
+          phases={phases}
         />
       )}
       {viewMode === "kanban" && (

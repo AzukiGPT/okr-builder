@@ -1,8 +1,10 @@
+import { useMemo } from "react"
 import Tag from "./tag-custom"
 import { ACTION_CHANNELS, ACTION_TYPES, ACTION_STATUSES, ACTION_PRIORITIES } from "../../data/actions-config"
+import { TEAM_CONFIG } from "../../data/config"
 import { Pencil, Trash2, Calendar, DollarSign } from "lucide-react"
 
-export default function ActionCard({ action, onEdit, onDelete, compact = false }) {
+export default function ActionCard({ action, onEdit, onDelete, krStatuses, phases, compact = false }) {
   const channel = ACTION_CHANNELS[action.channel]
   const actionType = ACTION_TYPES[action.action_type]
   const status = ACTION_STATUSES[action.status] || ACTION_STATUSES.todo
@@ -10,6 +12,43 @@ export default function ActionCard({ action, onEdit, onDelete, compact = false }
 
   const hasDateInfo = action.start_date || action.end_date
   const hasBudget = action.budget_estimated > 0
+
+  // Resolve UUIDs to display KR IDs + team color
+  const uuidToKrId = useMemo(() => {
+    const map = {}
+    if (krStatuses) {
+      for (const [krId, data] of Object.entries(krStatuses)) {
+        if (data?.uuid) map[data.uuid] = { krId, team: data.team }
+      }
+    }
+    return map
+  }, [krStatuses])
+
+  // Resolve phase
+  const phase = useMemo(() => {
+    if (!action.phase_id || !phases) return null
+    return phases.find((p) => p.id === action.phase_id) || null
+  }, [action.phase_id, phases])
+
+  const krIds = action.kr_ids || []
+  const maxKrs = compact ? 2 : 3
+  const visibleKrs = krIds.slice(0, maxKrs)
+  const remainingCount = krIds.length - maxKrs
+
+  const krBadges = visibleKrs.map((uuid) => {
+    const kr = uuidToKrId[uuid]
+    if (!kr) return null
+    const teamColor = TEAM_CONFIG[kr.team]?.colorHex || "#6B7280"
+    return (
+      <span
+        key={uuid}
+        className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-full"
+        style={{ backgroundColor: `${teamColor}15`, color: teamColor }}
+      >
+        {kr.krId}
+      </span>
+    )
+  }).filter(Boolean)
 
   if (compact) {
     return (
@@ -26,6 +65,22 @@ export default function ActionCard({ action, onEdit, onDelete, compact = false }
           )}
           <Tag variant={action.priority}>{priority.label}</Tag>
         </div>
+        {(krBadges.length > 0 || phase) && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {krBadges}
+            {remainingCount > 0 && (
+              <span className="text-[9px] text-muted-foreground">+{remainingCount}</span>
+            )}
+            {phase && (
+              <span
+                className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                style={{ backgroundColor: `${phase.color_hex}15`, color: phase.color_hex }}
+              >
+                {phase.name}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     )
   }
@@ -56,6 +111,18 @@ export default function ActionCard({ action, onEdit, onDelete, compact = false }
         {actionType && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
             {actionType.label}
+          </span>
+        )}
+        {krBadges}
+        {remainingCount > 0 && (
+          <span className="text-[9px] text-muted-foreground">+{remainingCount}</span>
+        )}
+        {phase && (
+          <span
+            className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: `${phase.color_hex}15`, color: phase.color_hex }}
+          >
+            {phase.name}
           </span>
         )}
       </div>

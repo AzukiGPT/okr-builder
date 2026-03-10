@@ -1,20 +1,22 @@
 // src/components/ui/actions-table-view.jsx
 import { useState, useMemo } from "react"
 import { ACTION_CHANNELS, ACTION_STATUSES, ACTION_PRIORITIES } from "../../data/actions-config"
+import { TEAM_CONFIG } from "../../data/config"
 import { Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import Tag from "./tag-custom"
 
 const COLUMNS = [
   { key: "title", label: "Title", sortable: true },
+  { key: "krs", label: "KRs", sortable: false },
   { key: "channel", label: "Channel", sortable: true },
   { key: "status", label: "Status", sortable: true },
   { key: "priority", label: "Priority", sortable: true },
+  { key: "phase", label: "Phase", sortable: true },
   { key: "dates", label: "Dates", sortable: true },
-  { key: "budget", label: "Budget", sortable: true },
   { key: "actions_col", label: "", sortable: false },
 ]
 
-function sortActions(actions, sortColumn, sortDirection) {
+function sortActions(actions, sortColumn, sortDirection, phaseLookup) {
   if (!sortColumn) return actions
   const sorted = [...actions]
   const dir = sortDirection === "asc" ? 1 : -1
@@ -28,17 +30,39 @@ function sortActions(actions, sortColumn, sortDirection) {
         const order = { critical: 0, high: 1, medium: 2, low: 3 }
         return dir * ((order[a.priority] ?? 2) - (order[b.priority] ?? 2))
       }
+      case "phase": {
+        const posA = phaseLookup[a.phase_id]?.position ?? 999
+        const posB = phaseLookup[b.phase_id]?.position ?? 999
+        return dir * (posA - posB)
+      }
       case "dates": return dir * ((a.start_date || "") > (b.start_date || "") ? 1 : -1)
-      case "budget": return dir * ((a.budget_estimated || 0) - (b.budget_estimated || 0))
       default: return 0
     }
   })
   return sorted
 }
 
-export default function ActionsTableView({ actions, onEdit, onDelete, onUpdateAction }) {
+export default function ActionsTableView({ actions, onEdit, onDelete, onUpdateAction, krStatuses, phases }) {
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState("asc")
+
+  const phaseLookup = useMemo(() => {
+    const lookup = {}
+    for (const p of (phases || [])) {
+      lookup[p.id] = p
+    }
+    return lookup
+  }, [phases])
+
+  const uuidToKrId = useMemo(() => {
+    const map = {}
+    if (krStatuses) {
+      for (const [krId, data] of Object.entries(krStatuses)) {
+        if (data?.uuid) map[data.uuid] = { krId, team: data.team }
+      }
+    }
+    return map
+  }, [krStatuses])
 
   const handleSort = (key) => {
     if (sortColumn === key) {
@@ -50,8 +74,8 @@ export default function ActionsTableView({ actions, onEdit, onDelete, onUpdateAc
   }
 
   const sorted = useMemo(
-    () => sortActions(actions, sortColumn, sortDirection),
-    [actions, sortColumn, sortDirection]
+    () => sortActions(actions, sortColumn, sortDirection, phaseLookup),
+    [actions, sortColumn, sortDirection, phaseLookup]
   )
 
   const handleInlineChange = (action, field, value) => {
@@ -99,6 +123,10 @@ export default function ActionsTableView({ actions, onEdit, onDelete, onUpdateAc
             const channel = ACTION_CHANNELS[action.channel]
             const status = ACTION_STATUSES[action.status] || ACTION_STATUSES.todo
             const priority = ACTION_PRIORITIES[action.priority] || ACTION_PRIORITIES.medium
+            const phase = phaseLookup[action.phase_id]
+            const krIds = action.kr_ids || []
+            const visibleKrs = krIds.slice(0, 3)
+            const remainingCount = krIds.length - 3
 
             return (
               <tr
@@ -109,6 +137,32 @@ export default function ActionsTableView({ actions, onEdit, onDelete, onUpdateAc
               >
                 <td className="px-3 py-2.5 font-medium text-foreground max-w-[250px]">
                   <span className="line-clamp-1">{action.title}</span>
+                </td>
+                <td className="px-3 py-2.5">
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {visibleKrs.map((uuid) => {
+                      const kr = uuidToKrId[uuid]
+                      if (!kr) return null
+                      const teamColor = TEAM_CONFIG[kr.team]?.colorHex || "#6B7280"
+                      return (
+                        <span
+                          key={uuid}
+                          className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-full"
+                          style={{ backgroundColor: `${teamColor}15`, color: teamColor }}
+                        >
+                          {kr.krId}
+                        </span>
+                      )
+                    })}
+                    {remainingCount > 0 && (
+                      <span
+                        className="text-[10px] text-muted-foreground"
+                        title={krIds.slice(3).map((uuid) => uuidToKrId[uuid]?.krId || "?").join(", ")}
+                      >
+                        +{remainingCount}
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-3 py-2.5">
                   {channel && (
@@ -144,13 +198,20 @@ export default function ActionsTableView({ actions, onEdit, onDelete, onUpdateAc
                     ))}
                   </select>
                 </td>
+                <td className="px-3 py-2.5">
+                  {phase && (
+                    <span
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                      style={{ backgroundColor: `${phase.color_hex}15`, color: phase.color_hex }}
+                    >
+                      {phase.name}
+                    </span>
+                  )}
+                </td>
                 <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                   {action.start_date && new Date(action.start_date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                  {action.start_date && action.end_date && " \u2192 "}
+                  {action.start_date && action.end_date && " → "}
                   {action.end_date && new Date(action.end_date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                </td>
-                <td className="px-3 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">
-                  {action.budget_estimated > 0 && `${action.budget_estimated.toLocaleString()} ${action.currency || "EUR"}`}
                 </td>
                 <td className="px-3 py-2.5">
                   <div className="flex items-center gap-1">
