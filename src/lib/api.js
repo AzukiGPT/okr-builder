@@ -34,6 +34,10 @@ export const api = {
   updatePhase: (id, payload) => apiFetch(`/action-phases?id=${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deletePhase: (id) => apiFetch(`/action-phases?id=${id}`, { method: "DELETE" }),
 
+  listDependencies: (setId) => apiFetch(`/action-dependencies?set_id=${setId}`),
+  createDependency: (payload) => apiFetch("/action-dependencies", { method: "POST", body: JSON.stringify(payload) }),
+  deleteDependency: (id) => apiFetch(`/action-dependencies?id=${id}`, { method: "DELETE" }),
+
   listKRStatuses: (setId) => apiFetch(`/kr-status?set_id=${setId}`),
   updateKRStatus: (setId, payload) => apiFetch(`/kr-status?set_id=${setId}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
