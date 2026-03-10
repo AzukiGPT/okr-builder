@@ -5,6 +5,11 @@
 
 const MS_PER_DAY = 86_400_000
 
+/** Minimum bar width as a ratio of columnWidth */
+export const MIN_BAR_WIDTH_RATIO = 0.3
+
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
 /** Parse a "YYYY-MM-DD" string into a Date at midnight UTC */
 export function parseDate(str) {
   if (!str) return null
@@ -86,7 +91,7 @@ export function computeBarPosition(action, timelineStart, columnWidth, zoom) {
 
   const left = dateToX(start, timelineStart, columnWidth, zoom)
   const right = dateToX(end, timelineStart, columnWidth, zoom)
-  const width = Math.max(right - left, columnWidth * 0.3) // min width
+  const width = Math.max(right - left, columnWidth * MIN_BAR_WIDTH_RATIO)
 
   return { left, width }
 }
@@ -124,9 +129,8 @@ export function generateHeaderCells(timelineStart, totalDays, columnWidth, zoom)
     const totalMonths = Math.ceil(totalDays / 30)
     for (let i = 0; i < totalMonths; i++) {
       const d = addDays(timelineStart, i * 30)
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
       cells.push({
-        label: `${monthNames[d.getMonth()]} ${d.getFullYear()}`,
+        label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`,
         x: i * columnWidth,
         width: columnWidth,
         isWeekend: false,
@@ -152,7 +156,7 @@ export function groupActionsByPhase(actions, phases) {
   const phaseMap = new Map()
   const unassigned = []
 
-  for (const phase of (phases || []).sort((a, b) => a.position - b.position)) {
+  for (const phase of [...(phases || [])].sort((a, b) => a.position - b.position)) {
     phaseMap.set(phase.id, { phase, actions: [] })
   }
 

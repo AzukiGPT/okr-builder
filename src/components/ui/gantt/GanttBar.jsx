@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react"
 import { ACTION_STATUSES } from "../../../data/actions-config"
-import { xToDate, formatDate } from "./gantt-utils"
+import { xToDate, formatDate, MIN_BAR_WIDTH_RATIO } from "./gantt-utils"
 
 const ROW_HEIGHT = 40
 const EDGE_WIDTH = 6
@@ -18,6 +18,7 @@ export default function GanttBar({
 }) {
   const [dragState, setDragState] = useState(null) // { mode, startX, origLeft, origWidth }
   const barRef = useRef(null)
+  const dragRef = useRef(null)
 
   const statusCfg = ACTION_STATUSES[action.status]
 
@@ -25,51 +26,61 @@ export default function GanttBar({
     e.preventDefault()
     e.stopPropagation()
     barRef.current?.setPointerCapture(e.pointerId)
-    setDragState({
+    const state = {
       mode,
       startX: e.clientX,
       origLeft: left,
       origWidth: width,
-    })
+    }
+    dragRef.current = state
+    setDragState(state)
   }, [left, width])
 
   const handlePointerMove = useCallback((e) => {
-    if (!dragState) return
-    const dx = e.clientX - dragState.startX
-    let newLeft = dragState.origLeft
-    let newWidth = dragState.origWidth
+    const ds = dragRef.current
+    if (!ds) return
+    const dx = e.clientX - ds.startX
+    let currentLeft = ds.origLeft
+    let currentWidth = ds.origWidth
 
-    if (dragState.mode === "move") {
-      newLeft = dragState.origLeft + dx
-    } else if (dragState.mode === "resize-right") {
-      newWidth = Math.max(dragState.origWidth + dx, columnWidth * 0.3)
-    } else if (dragState.mode === "resize-left") {
-      newLeft = dragState.origLeft + dx
-      newWidth = Math.max(dragState.origWidth - dx, columnWidth * 0.3)
+    if (ds.mode === "move") {
+      currentLeft = ds.origLeft + dx
+    } else if (ds.mode === "resize-right") {
+      currentWidth = Math.max(ds.origWidth + dx, columnWidth * MIN_BAR_WIDTH_RATIO)
+    } else if (ds.mode === "resize-left") {
+      currentLeft = ds.origLeft + dx
+      currentWidth = Math.max(ds.origWidth - dx, columnWidth * MIN_BAR_WIDTH_RATIO)
     }
 
-    setDragState((prev) => ({ ...prev, currentLeft: newLeft, currentWidth: newWidth }))
-  }, [dragState, columnWidth])
+    dragRef.current = { ...ds, currentLeft, currentWidth }
+    setDragState(dragRef.current)
+  }, [columnWidth])
 
   const handlePointerUp = useCallback((e) => {
-    if (!dragState) return
-    barRef.current?.releasePointerCapture(e.pointerId)
+    const ds = dragRef.current
+    if (!ds) return
+    try {
+      barRef.current?.releasePointerCapture(e.pointerId)
+    } catch {
+      // pointer capture may already be released
+    }
 
-    const finalLeft = dragState.currentLeft ?? dragState.origLeft
-    const finalWidth = dragState.currentWidth ?? dragState.origWidth
+    const finalLeft = ds.currentLeft ?? ds.origLeft
+    const finalWidth = ds.currentWidth ?? ds.origWidth
 
     const newStart = xToDate(finalLeft, timelineStart, columnWidth, zoom)
     const newEnd = xToDate(finalLeft + finalWidth, timelineStart, columnWidth, zoom)
 
+    dragRef.current = null
     setDragState(null)
 
-    if (finalLeft !== dragState.origLeft || finalWidth !== dragState.origWidth) {
+    if (finalLeft !== ds.origLeft || finalWidth !== ds.origWidth) {
       onUpdateAction(action.id, {
         start_date: formatDate(newStart),
         end_date: formatDate(newEnd),
       })
     }
-  }, [dragState, timelineStart, columnWidth, zoom, onUpdateAction, action.id])
+  }, [timelineStart, columnWidth, zoom, onUpdateAction, action.id])
 
   const displayLeft = dragState?.currentLeft ?? left
   const displayWidth = dragState?.currentWidth ?? width

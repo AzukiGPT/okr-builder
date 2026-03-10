@@ -13,6 +13,7 @@ import {
 import { ROW_HEIGHT } from "./GanttBar"
 
 const TITLE_COL_WIDTH = 200
+const ZOOM_KEYS = Object.keys(ZOOM_LEVELS)
 
 export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) {
   const [zoom, setZoom] = useState("week")
@@ -62,16 +63,19 @@ export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) 
     }
   }, [timelineStart, totalDays, columnWidth, zoom])
 
-  const zoomKeys = Object.keys(ZOOM_LEVELS)
-  const currentIndex = zoomKeys.indexOf(zoom)
-
   const handleZoomIn = useCallback(() => {
-    if (currentIndex > 0) setZoom(zoomKeys[currentIndex - 1])
-  }, [currentIndex, zoomKeys])
+    setZoom((prev) => {
+      const idx = ZOOM_KEYS.indexOf(prev)
+      return idx > 0 ? ZOOM_KEYS[idx - 1] : prev
+    })
+  }, [])
 
   const handleZoomOut = useCallback(() => {
-    if (currentIndex < zoomKeys.length - 1) setZoom(zoomKeys[currentIndex + 1])
-  }, [currentIndex, zoomKeys])
+    setZoom((prev) => {
+      const idx = ZOOM_KEYS.indexOf(prev)
+      return idx < ZOOM_KEYS.length - 1 ? ZOOM_KEYS[idx + 1] : prev
+    })
+  }, [])
 
   const togglePhase = useCallback((phaseId) => {
     setCollapsedPhases((prev) => {
@@ -100,7 +104,7 @@ export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) 
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
-          {zoomKeys.map((key) => (
+          {ZOOM_KEYS.map((key) => (
             <Button
               key={key}
               variant={zoom === key ? "default" : "ghost"}
@@ -141,7 +145,7 @@ export default function GanttChart({ actions, phases, onUpdateAction, onEdit }) 
             {/* Phase groups titles */}
             {groups.map((group) => (
               <div key={group.phase.id}>
-                {/* Phase header row */}
+                {/* Phase header row — keep in sync with GanttPhaseGroup header (layout constraint: sticky left vs scrollable) */}
                 <div
                   className="flex items-center gap-2 px-3 py-1.5 border-b border-border"
                   style={{ backgroundColor: `${group.phase.color_hex}15` }}

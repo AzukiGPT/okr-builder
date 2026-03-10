@@ -17,22 +17,21 @@ export default function GanttPhaseGroup({
   onEdit,
 }) {
 
-  const bars = useMemo(() => {
-    return actions
-      .map((action) => {
-        const pos = computeBarPosition(action, timelineStart, columnWidth, zoom)
-        if (!pos) return null
-        return { action, ...pos }
-      })
-      .filter(Boolean)
+  const barMap = useMemo(() => {
+    const map = new Map()
+    for (const action of actions) {
+      const pos = computeBarPosition(action, timelineStart, columnWidth, zoom)
+      if (pos) map.set(action.id, { action, ...pos })
+    }
+    return map
   }, [actions, timelineStart, columnWidth, zoom])
 
-  const scheduledCount = bars.length
+  const scheduledCount = barMap.size
   const totalCount = actions.length
 
   return (
     <div>
-      {/* Phase header */}
+      {/* Phase header — keep in sync with GanttChart sticky left column header (layout constraint: sticky left vs scrollable) */}
       <div
         className="sticky left-0 flex items-center gap-2 px-3 py-1.5 cursor-pointer select-none z-10 border-b border-border"
         style={{ backgroundColor: `${phase.color_hex}15` }}
@@ -55,7 +54,7 @@ export default function GanttPhaseGroup({
       {!collapsed && (
         <div>
           {actions.map((action) => {
-            const bar = bars.find((b) => b.action.id === action.id)
+            const bar = barMap.get(action.id)
             return (
               <div
                 key={action.id}
