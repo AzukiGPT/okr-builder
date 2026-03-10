@@ -12,6 +12,10 @@ import { generatePDF } from "./utils/exportPDF"
 import { generateExcel } from "./utils/exportExcel"
 import { copyNotionMarkdown } from "./utils/exportNotion"
 import { useShareableURL } from "./hooks/useShareableURL"
+import { generateActionsPDF } from "./utils/exportActionsPDF"
+import { generateActionsExcel } from "./utils/exportActionsExcel"
+import { copyActionsMarkdown } from "./utils/exportActionsNotion"
+import { shareActionsURL } from "./utils/shareActionsURL"
 import AppShell from "./components/layout/AppShell"
 import ContextStep from "./components/steps/ContextStep"
 import SelectionStep from "./components/steps/SelectionStep"
@@ -39,6 +43,7 @@ export default function App({ onNavigate }) {
   const { templates } = useTemplates(state.selected)
   const { phases, ensureDefaultPhases } = usePhases(activeSetId)
   const { dependencies, createDependency, deleteDependency } = useDependencies(activeSetId)
+  const activeSetName = sets.find((s) => s.id === activeSetId)?.name || "Action Plan"
 
   const [setsLoading, setSetsLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -196,6 +201,25 @@ export default function App({ onNavigate }) {
           onDeleteAction={deleteAction}
           onBack={() => setStep(3)}
           onBackToSets={handleBackToSets}
+          onExportPDF={() => generateActionsPDF({
+            actions,
+            phases,
+            krStatuses,
+            setName: activeSetName,
+          })}
+          onExportExcel={() => generateActionsExcel({
+            actions,
+            phases,
+            krStatuses,
+            setName: activeSetName,
+          })}
+          onCopyNotion={() => copyActionsMarkdown({
+            actions,
+            phases,
+            krStatuses,
+            setName: activeSetName,
+          })}
+          onShareLink={() => shareActionsURL({ actions, phases })}
         />
       )}
     </AppShell>

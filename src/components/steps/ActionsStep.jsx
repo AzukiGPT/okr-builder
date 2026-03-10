@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react"
 import { ACTION_STATUSES } from "../../data/actions-config"
 import ActionsViewToolbar from "../ui/actions-view-toolbar"
+import ExportActionsToolbar from "../ui/export-actions-toolbar"
 import ActionsTableView from "../ui/actions-table-view"
 import ActionsKanbanView from "../ui/actions-kanban-view"
 import ActionsGanttView from "../ui/actions-gantt-view"
@@ -27,6 +28,10 @@ export default function ActionsStep({
   onDeleteAction,
   onBack,
   onBackToSets,
+  onExportPDF,
+  onExportExcel,
+  onCopyNotion,
+  onShareLink,
 }) {
   const [viewMode, setViewMode] = useState("table")
   const [groupBy, setGroupBy] = useState("status")
@@ -182,14 +187,23 @@ export default function ActionsStep({
         </div>
       )}
 
-      {/* Toolbar */}
-      <ActionsViewToolbar
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        groupBy={groupBy}
-        onGroupByChange={setGroupBy}
-        onAddAction={handleAddAction}
-      />
+      {/* Toolbar + Export */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <ActionsViewToolbar
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          groupBy={groupBy}
+          onGroupByChange={setGroupBy}
+          onAddAction={handleAddAction}
+        />
+        <ExportActionsToolbar
+          disabled={totalActions === 0}
+          onExportPDF={onExportPDF}
+          onExportExcel={onExportExcel}
+          onCopyNotion={onCopyNotion}
+          onShareLink={onShareLink}
+        />
+      </div>
 
       {/* Active view */}
       {viewMode === "table" && (
