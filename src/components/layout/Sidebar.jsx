@@ -1,34 +1,57 @@
+import { useState, useEffect } from "react"
+import { Building2, Target, Rocket, Palette, ChevronDown, ChevronRight } from "lucide-react"
 import { useAuth } from "../../contexts/AuthContext"
+import { SECTIONS, getActiveSectionForStep, isOKRStep } from "../../lib/navigation"
+
+const ICON_MAP = { Building2, Target, Rocket, Palette }
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+function getInitials(email) {
+  if (!email) return "?"
+  const parts = email.split("@")[0].split(/[._-]/)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return email.slice(0, 2).toUpperCase()
+}
+
+function resolveActive(activePage, activeSetId, step) {
+  if (activePage === "company") return { sectionId: "company" }
+  if (activePage === "sets") return { sectionId: "okrs", subPageId: "sets" }
+  if (activePage === "marketing-assets") return { sectionId: "marketing-assets" }
+  if (!activeSetId) return { sectionId: "okrs", subPageId: "sets" }
+  return getActiveSectionForStep(step)
+}
+
+// ── User Footer ──────────────────────────────────────────────────────
 
 function UserFooter({ saveStatus, onBackToSets, onNavigate }) {
   const { user, profile, signOut } = useAuth()
   if (!user) return null
 
   const statusLabel = {
-    idle: "",
-    saving: "Saving...",
-    saved: "\u2713 Saved",
-    error: "\u26a0 Save failed",
+    idle: "", saving: "Saving...", saved: "\u2713 Saved", error: "\u26a0 Error",
   }[saveStatus] || ""
-
   const statusColor = {
-    saving: "text-amber-500",
-    saved: "text-emerald-500",
-    error: "text-red-500",
+    saving: "text-amber-500", saved: "text-emerald-500", error: "text-red-500",
   }[saveStatus] || "text-transparent"
 
   return (
     <div className="px-3 pb-4 space-y-2">
       <div className="h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] text-sidebar-foreground/60 truncate max-w-[120px]">{user.email}</p>
-        <span className={`text-[10px] ${statusColor}`}>{statusLabel}</span>
+      <div className="flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+          <span className="text-[10px] font-bold text-primary">{getInitials(user.email)}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] text-sidebar-foreground/70 truncate">{user.email}</p>
+          <span className={`text-[10px] ${statusColor}`}>{statusLabel}</span>
+        </div>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 pl-9">
         <button
           type="button"
           onClick={onBackToSets}
-          className="text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors cursor-pointer"
+          className="text-[11px] text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors cursor-pointer"
         >
           My sets
         </button>
@@ -44,7 +67,7 @@ function UserFooter({ saveStatus, onBackToSets, onNavigate }) {
         <button
           type="button"
           onClick={signOut}
-          className="text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors cursor-pointer"
+          className="text-[11px] text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors cursor-pointer"
         >
           Sign out
         </button>
@@ -53,182 +76,217 @@ function UserFooter({ saveStatus, onBackToSets, onNavigate }) {
   )
 }
 
-const STEPS = [
-  { label: "Context", icon: "1" },
-  { label: "Select", icon: "2" },
-  { label: "Funnel", icon: "3" },
-  { label: "System", icon: "4" },
-  { label: "Actions", icon: "5" },
-]
+// ── Section Item ─────────────────────────────────────────────────────
 
-function StepButton({ step, index, currentStep, maxStep, onClick }) {
-  const isDone = index < currentStep
-  const isActive = index === currentStep
-  const isClickable = index <= maxStep
-
-  const circleClass = isDone
-    ? "bg-emerald-500"
-    : isActive
-      ? "bg-primary"
-      : "bg-sidebar-accent/50"
-
-  const labelClass = isActive
-    ? "text-sidebar-foreground font-bold"
-    : isDone
-      ? "text-sidebar-foreground/80"
-      : "text-sidebar-foreground/40"
+function SectionItem({ section, isActive, disabled, hasChevron, expanded, onClick }) {
+  const Icon = ICON_MAP[section.icon]
 
   return (
     <button
       type="button"
-      disabled={!isClickable}
-      onClick={() => onClick(index)}
-      className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-all ${
-        isActive ? "bg-primary/10 border border-primary/20" : "border border-transparent"
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all ${
+        disabled ? "opacity-40 cursor-default" : "cursor-pointer"
       } ${
-        isClickable && !isActive ? "hover:bg-sidebar-accent cursor-pointer" : isClickable ? "cursor-pointer" : "cursor-default"
+        isActive
+          ? "bg-primary/10 border-l-2 border-primary ml-0 pl-2.5"
+          : "border-l-2 border-transparent hover:bg-sidebar-accent"
       }`}
     >
-      <span
-        className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-mono font-bold shrink-0 ${circleClass}${isActive ? " glow-sm" : ""} ${isDone || isActive ? "text-white" : "text-muted-foreground"}`}
-      >
-        {isDone ? "\u2713" : step.icon}
+      {Icon && (
+        <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? "text-primary" : "text-sidebar-foreground/50"}`} />
+      )}
+      <span className={`text-sm flex-1 text-left ${isActive ? "text-sidebar-foreground font-semibold" : "text-sidebar-foreground/70"}`}>
+        {section.label}
       </span>
-      <span className={`text-sm ${labelClass}`}>{step.label}</span>
+      {section.placeholder && (
+        <span className="text-[9px] text-sidebar-foreground/30 font-mono uppercase tracking-wider">soon</span>
+      )}
+      {hasChevron && !disabled && (
+        expanded
+          ? <ChevronDown className="w-3.5 h-3.5 text-sidebar-foreground/40" />
+          : <ChevronRight className="w-3.5 h-3.5 text-sidebar-foreground/40" />
+      )}
     </button>
   )
 }
 
-function MiniRecap({ ctx, selected, onReset, onShare, shared }) {
-  const totalSelected =
-    selected.sales.length + selected.marketing.length + selected.csm.length
+// ── Sub-Page Item ────────────────────────────────────────────────────
 
+function SubPageItem({ subPage, isActive, disabled, onClick }) {
   return (
-    <div className="bg-sidebar-accent rounded-lg p-3 space-y-2 glass-card">
-      <p className="text-sidebar-foreground/60 text-xs font-mono tracking-wide">RECAP</p>
-      {ctx.stage && (
-        <p className="text-sidebar-foreground text-xs">
-          <span className="text-sidebar-foreground/60">Stage:</span> {ctx.stage}
-        </p>
-      )}
-      {ctx.bottleneck && (
-        <p className="text-sidebar-foreground text-xs">
-          <span className="text-sidebar-foreground/60">Focus:</span> {ctx.bottleneck}
-        </p>
-      )}
-      {totalSelected > 0 && (
-        <p className="text-sidebar-foreground text-xs">
-          <span className="text-sidebar-foreground/60">Objectives:</span> {totalSelected}
-        </p>
-      )}
-      <div className="flex gap-2 pt-1">
-        <button
-          type="button"
-          onClick={onReset}
-          className="text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
-        >
-          Reset
-        </button>
-        {onShare && (
-          <button
-            type="button"
-            onClick={onShare}
-            className="text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
-          >
-            {shared ? "Copied!" : "Share"}
-          </button>
-        )}
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex items-center gap-2.5 w-full pl-10 pr-3 py-1.5 rounded-md transition-all ${
+        disabled ? "opacity-35 cursor-default" : "cursor-pointer"
+      } ${isActive ? "bg-primary/5" : disabled ? "" : "hover:bg-sidebar-accent/50"}`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? "bg-primary" : "bg-sidebar-foreground/20"}`} />
+      <span className={`text-[13px] ${isActive ? "text-sidebar-foreground font-semibold" : "text-sidebar-foreground/55"}`}>
+        {subPage.label}
+      </span>
+    </button>
   )
 }
 
-export default function Sidebar({
-  step,
-  maxStep,
-  setStep,
-  ctx,
-  selected,
-  onReset,
-  onShare,
-  shared,
-  saveStatus,
-  onBackToSets,
-  onNavigate,
-  mobile,
+// ── Desktop Sidebar ──────────────────────────────────────────────────
+
+function DesktopSidebar({
+  step, setStep, activeSetId, activeSetName,
+  saveStatus, onBackToSets, onNavigate,
+  activePage, onSetActivePage,
 }) {
-  if (mobile) {
-    return (
-      <nav className="w-full bg-sidebar border-b border-sidebar-border px-4 py-3 flex items-center gap-2 shadow-sm">
-        <span className="font-sans font-bold text-sidebar-foreground text-lg mr-4">OKR Builder</span>
-        <div className="flex items-center gap-1">
-          {STEPS.map((s, i) => {
-            const isDone = i < step
-            const isActive = i === step
-            const isClickable = i <= maxStep
+  const active = resolveActive(activePage, activeSetId, step)
+  const [okrsExpanded, setOkrsExpanded] = useState(true)
 
-            const circleClass = isDone
-              ? "bg-emerald-500"
-              : isActive
-                ? "bg-primary"
-                : "bg-sidebar-accent/50"
+  useEffect(() => {
+    if (active.sectionId === "okrs") setOkrsExpanded(true)
+  }, [active.sectionId])
 
-            return (
-              <button
-                key={s.label}
-                type="button"
-                disabled={!isClickable}
-                onClick={() => setStep(i)}
-                className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-mono font-bold shrink-0 ${circleClass} ${isDone || isActive ? "text-white" : "text-muted-foreground"} ${
-                  isClickable ? "cursor-pointer" : "cursor-default"
-                }`}
-              >
-                {isDone ? "\u2713" : s.icon}
-              </button>
-            )
-          })}
-        </div>
-      </nav>
-    )
+  function handleSectionClick(section) {
+    if (section.id === "company") {
+      onSetActivePage("company")
+      return
+    }
+    if (section.id === "okrs") {
+      setOkrsExpanded((prev) => !prev)
+      if (active.sectionId !== "okrs") {
+        onSetActivePage("sets")
+      }
+      return
+    }
+    if (section.placeholder) {
+      onSetActivePage(section.id)
+      return
+    }
+    if (section.requiresSet && !activeSetId) return
+    if (section.step != null) {
+      setStep(section.step)
+    }
+  }
+
+  function handleSubPageClick(subPage) {
+    if (subPage.id === "sets") {
+      onSetActivePage("sets")
+      return
+    }
+    if (subPage.requiresSet && !activeSetId) return
+    if (subPage.step != null) {
+      setStep(subPage.step)
+    }
   }
 
   return (
-    <nav className="w-56 h-screen sticky top-0 border-r border-sidebar-border/50 flex flex-col bg-sidebar">
+    <nav className="w-60 h-screen sticky top-0 border-r border-sidebar-border/50 flex flex-col bg-sidebar">
+      {/* Header */}
       <div className="px-5 pt-6 pb-4">
         <h1 className="font-sans font-bold text-xl gradient-heading">OKR Builder</h1>
-        {ctx.company && (
-          <p className="text-sidebar-foreground/40 text-xs mt-1 truncate">{ctx.company}</p>
-        )}
+        <p className="text-sidebar-foreground/40 text-xs mt-1 truncate">
+          {activeSetId ? activeSetName : "Select a set to begin"}
+        </p>
       </div>
 
       <div className="mx-4 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
 
-      <div className="flex-1 flex flex-col gap-1 px-2 py-3">
-        {STEPS.map((s, i) => (
-          <StepButton
-            key={s.label}
-            step={s}
-            index={i}
-            currentStep={step}
-            maxStep={maxStep}
-            onClick={setStep}
-          />
-        ))}
-      </div>
+      {/* Sections */}
+      <div className="flex-1 flex flex-col gap-0.5 px-2 py-3 overflow-y-auto">
+        {SECTIONS.map((section) => {
+          const isSectionActive = active.sectionId === section.id
+          const hasSubPages = Boolean(section.subPages)
+          const sectionDisabled = section.requiresSet && !activeSetId
 
-      {ctx.stage && (
-        <div className="px-3 pb-4">
-          <MiniRecap
-            ctx={ctx}
-            selected={selected}
-            onReset={onReset}
-            onShare={onShare}
-            shared={shared}
-          />
-        </div>
-      )}
+          return (
+            <div key={section.id}>
+              <SectionItem
+                section={section}
+                isActive={isSectionActive && !hasSubPages}
+                disabled={sectionDisabled && !hasSubPages}
+                hasChevron={hasSubPages}
+                expanded={hasSubPages && okrsExpanded}
+                onClick={() => handleSectionClick(section)}
+              />
+              {hasSubPages && okrsExpanded && (
+                <div className="mt-0.5 mb-1 space-y-0.5">
+                  {section.subPages.map((sub) => {
+                    const subDisabled = sub.requiresSet && !activeSetId
+                    return (
+                      <SubPageItem
+                        key={sub.id}
+                        subPage={sub}
+                        isActive={isSectionActive && active.subPageId === sub.id}
+                        disabled={subDisabled}
+                        onClick={() => handleSubPageClick(sub)}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
 
       <UserFooter saveStatus={saveStatus} onBackToSets={onBackToSets} onNavigate={onNavigate} />
     </nav>
   )
+}
+
+// ── Mobile Sidebar ───────────────────────────────────────────────────
+
+function MobileSidebar({ step, setStep, activeSetId, activePage, onSetActivePage }) {
+  const active = resolveActive(activePage, activeSetId, step)
+
+  function handleTap(section) {
+    if (section.id === "company") { onSetActivePage("company"); return }
+    if (section.placeholder) { onSetActivePage(section.id); return }
+    if (section.subPages) {
+      if (!activeSetId) { onSetActivePage("sets"); return }
+      setStep(0)
+      return
+    }
+    if (section.requiresSet && !activeSetId) return
+    if (section.step != null) setStep(section.step)
+  }
+
+  return (
+    <nav className="w-full bg-sidebar border-b border-sidebar-border px-4 py-3 flex items-center gap-2 shadow-sm">
+      <span className="font-sans font-bold text-sidebar-foreground text-lg mr-3">OKR Builder</span>
+      <div className="flex items-center gap-1">
+        {SECTIONS.map((section) => {
+          const Icon = ICON_MAP[section.icon]
+          const isActive = active.sectionId === section.id
+          const disabled = section.requiresSet && !activeSetId
+
+          return (
+            <button
+              key={section.id}
+              type="button"
+              onClick={() => handleTap(section)}
+              disabled={disabled}
+              className={`flex items-center justify-center w-9 h-9 rounded-full transition-all ${
+                disabled ? "opacity-30 cursor-default" : "cursor-pointer"
+              } ${
+                isActive
+                  ? "bg-primary text-white glow-sm"
+                  : "bg-sidebar-accent/50 text-sidebar-foreground/50 hover:bg-sidebar-accent"
+              }`}
+              title={section.label}
+            >
+              {Icon && <Icon className="w-4 h-4" />}
+            </button>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
+// ── Export ────────────────────────────────────────────────────────────
+
+export default function Sidebar({ mobile, ...props }) {
+  if (mobile) return <MobileSidebar {...props} />
+  return <DesktopSidebar {...props} />
 }

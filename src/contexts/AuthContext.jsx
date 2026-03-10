@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { supabase } from "../lib/supabase"
+import { api } from "../lib/api"
 
 const AuthContext = createContext(null)
 
@@ -8,21 +9,21 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchProfile = useCallback(async (userId) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, email, full_name, company, plan, role, is_approved")
-      .eq("id", userId)
-      .single()
-    if (!error && data) setProfile(data)
-    return data
+  const fetchProfile = useCallback(async () => {
+    try {
+      const { data } = await api.getProfile()
+      if (data) setProfile(data)
+      return data
+    } catch {
+      return null
+    }
   }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const u = session?.user ?? null
       setUser(u)
-      if (u) await fetchProfile(u.id)
+      if (u) await fetchProfile()
       setLoading(false)
     }).catch(() => {
       setUser(null)
@@ -34,7 +35,7 @@ export function AuthProvider({ children }) {
       async (_event, session) => {
         const u = session?.user ?? null
         setUser(u)
-        if (u) await fetchProfile(u.id)
+        if (u) await fetchProfile()
         else setProfile(null)
         setLoading(false)
       }

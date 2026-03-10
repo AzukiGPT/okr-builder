@@ -22,6 +22,8 @@ import SelectionStep from "./components/steps/SelectionStep"
 import FunnelStep from "./components/steps/FunnelStep"
 import OKRSystemStep from "./components/steps/OKRSystemStep"
 import ActionsStep from "./components/steps/ActionsStep"
+import CompanyPage from "./components/steps/CompanyPage"
+import MarketingAssetsPage from "./components/steps/MarketingAssetsPage"
 import SetSelector from "./components/auth/SetSelector"
 
 export default function App({ onNavigate }) {
@@ -45,6 +47,7 @@ export default function App({ onNavigate }) {
   const { dependencies, createDependency, deleteDependency } = useDependencies(activeSetId)
   const activeSetName = sets.find((s) => s.id === activeSetId)?.name || "Action Plan"
 
+  const [activePage, setActivePage] = useState(null)
   const [setsLoading, setSetsLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState(null)
@@ -53,13 +56,23 @@ export default function App({ onNavigate }) {
     loadSets().then(() => setSetsLoading(false))
   }, [loadSets])
 
+  // Navigate to a step (clears activePage so step content shows)
+  const handleSetStep = useCallback((s) => {
+    setActivePage(null)
+    setStep(s)
+  }, [setStep])
+
+  const handleSetActivePage = useCallback((pageId) => {
+    setActivePage(pageId)
+  }, [])
+
   const handleContextNext = useCallback(() => {
     const parsedWinRate = parseContextValue(state.ctx.winRate)
     if (parsedWinRate != null && parsedWinRate > 0 && parsedWinRate <= 100) {
       syncCtxToFunnel({ winRate: parsedWinRate })
     }
-    setStep(1)
-  }, [state.ctx.winRate, syncCtxToFunnel, setStep])
+    handleSetStep(1)
+  }, [state.ctx.winRate, syncCtxToFunnel, handleSetStep])
 
   const handleCopyNotion = useCallback(async () => {
     await copyNotionMarkdown({
@@ -79,6 +92,7 @@ export default function App({ onNavigate }) {
       reset()
       const newSet = await createSet("Mon OKR Set")
       setActiveSetId(newSet.id)
+      setActivePage(null)
     } catch (err) {
       setError(err.message || "Failed to create set. Please try again.")
     } finally {
@@ -89,67 +103,72 @@ export default function App({ onNavigate }) {
   const handleBackToSets = useCallback(() => {
     setActiveSetId(null)
     reset()
+    setActivePage("sets")
     loadSets()
   }, [setActiveSetId, reset, loadSets])
 
-  if (!activeSetId) {
-    return (
-      <SetSelector
-        sets={sets}
-        loading={setsLoading}
-        creating={creating}
-        error={error}
-        onLoadSet={loadSet}
-        onCreateNew={handleCreateNew}
-        onDeleteSet={deleteSet}
-        onRenameSet={renameSet}
-        onNavigate={onNavigate}
-      />
-    )
-  }
+  // Determine page key for CSS transitions
+  const pageKey = activePage || (!activeSetId ? "sets" : `step-${state.step}`)
+
+  // Determine what content to show
+  const showSets = activePage === "sets" || (!activeSetId && !activePage)
+  const showStep = activeSetId && !activePage
 
   return (
     <AppShell
       step={state.step}
-      maxStep={state.maxStep}
-      setStep={setStep}
-      ctx={state.ctx}
-      selected={state.selected}
-      onReset={() => { reset(); setStep(0) }}
-      onShare={share}
-      shared={shared}
+      setStep={handleSetStep}
+      activeSetId={activeSetId}
+      activeSetName={activeSetName}
       saveStatus={saveStatus}
       onBackToSets={handleBackToSets}
       onNavigate={onNavigate}
+      activePage={activePage}
+      onSetActivePage={handleSetActivePage}
+      pageKey={pageKey}
     >
-      {state.step === 0 && (
+      {activePage === "company" && <CompanyPage />}
+      {activePage === "marketing-assets" && <MarketingAssetsPage />}
+      {showSets && (
+        <SetSelector
+          sets={sets}
+          loading={setsLoading}
+          creating={creating}
+          error={error}
+          onLoadSet={loadSet}
+          onCreateNew={handleCreateNew}
+          onDeleteSet={deleteSet}
+          onRenameSet={renameSet}
+        />
+      )}
+      {showStep && state.step === 0 && (
         <ContextStep
           ctx={state.ctx}
           setCtx={setCtx}
           onNext={handleContextNext}
         />
       )}
-      {state.step === 1 && (
+      {showStep && state.step === 1 && (
         <SelectionStep
           ctx={state.ctx}
           selected={state.selected}
           toggleObjective={toggleObjective}
-          onNext={() => setStep(2)}
-          onBack={() => setStep(0)}
+          onNext={() => handleSetStep(2)}
+          onBack={() => handleSetStep(0)}
         />
       )}
-      {state.step === 2 && (
+      {showStep && state.step === 2 && (
         <FunnelStep
           funnel={state.funnel}
           setFunnel={setFunnel}
           calc={calc}
           ctxArr={state.ctx.arr}
           ctxWinRate={state.ctx.winRate}
-          onNext={() => setStep(3)}
-          onBack={() => setStep(1)}
+          onNext={() => handleSetStep(3)}
+          onBack={() => handleSetStep(1)}
         />
       )}
-      {state.step === 3 && (
+      {showStep && state.step === 3 && (
         <OKRSystemStep
           ctx={state.ctx}
           selected={state.selected}
@@ -160,9 +179,9 @@ export default function App({ onNavigate }) {
           krStatuses={krStatuses}
           onKRStatusChange={setKRStatus}
           onKRProgressChange={setKRProgress}
-          onBack={() => setStep(2)}
-          onNext={() => setStep(4)}
-          onReset={() => { reset(); setStep(0) }}
+          onBack={() => handleSetStep(2)}
+          onNext={() => handleSetStep(4)}
+          onReset={() => { reset(); handleSetStep(0) }}
           onExportPDF={() => generatePDF({
             ctx: state.ctx,
             selected: state.selected,
@@ -182,7 +201,7 @@ export default function App({ onNavigate }) {
           shared={shared}
         />
       )}
-      {state.step === 4 && (
+      {showStep && state.step === 4 && (
         <ActionsStep
           selected={state.selected}
           actions={actions}
@@ -199,7 +218,7 @@ export default function App({ onNavigate }) {
           onCreateDependency={createDependency}
           onDeleteDependency={deleteDependency}
           onDeleteAction={deleteAction}
-          onBack={() => setStep(3)}
+          onBack={() => handleSetStep(3)}
           onBackToSets={handleBackToSets}
           onExportPDF={() => generateActionsPDF({
             actions,
