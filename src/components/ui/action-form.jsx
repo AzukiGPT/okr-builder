@@ -23,6 +23,22 @@ function SelectField({ label, value, onChange, options }) {
   )
 }
 
+function computeDefaultKRs(selected, krStatuses) {
+  if (!selected || !krStatuses) return []
+  const uuids = []
+  TEAMS.forEach((team) => {
+    if (!selected[team]?.length) return
+    const objectives = OBJECTIVES[team].filter((obj) => selected[team].includes(obj.id))
+    objectives.forEach((obj) => {
+      obj.krs.forEach((kr) => {
+        const krData = krStatuses[kr.id]
+        if (krData?.uuid) uuids.push(krData.uuid)
+      })
+    })
+  })
+  return uuids
+}
+
 export default function ActionForm({ onSubmit, onCancel, initialData, selected, krStatuses, phases }) {
   const [title, setTitle] = useState(initialData?.title || "")
   const [description, setDescription] = useState(initialData?.description || "")
@@ -33,7 +49,12 @@ export default function ActionForm({ onSubmit, onCancel, initialData, selected, 
   const [endDate, setEndDate] = useState(initialData?.end_date || "")
   const [budgetEstimated, setBudgetEstimated] = useState(initialData?.budget_estimated || "")
   const [currency, setCurrency] = useState(initialData?.currency || "EUR")
-  const [selectedKRs, setSelectedKRs] = useState(initialData?.kr_ids || [])
+  const [selectedKRs, setSelectedKRs] = useState(() => {
+    // Editing existing action: use its kr_ids
+    if (initialData?.kr_ids) return initialData.kr_ids
+    // New action: pre-select all KRs by default
+    return computeDefaultKRs(selected, krStatuses)
+  })
   const [phaseId, setPhaseId] = useState(initialData?.phase_id || "")
   const [estimatedDays, setEstimatedDays] = useState(initialData?.estimated_days || 10)
 
