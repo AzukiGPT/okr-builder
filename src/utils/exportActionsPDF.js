@@ -88,34 +88,71 @@ function drawHeader(doc, setName) {
 function drawSummaryStats(doc, y, actions) {
   const total = actions.length
   const done = actions.filter((a) => a.status === "done").length
+  const inProgress = actions.filter((a) => a.status === "in_progress").length
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
-
   const totalBudget = actions.reduce((sum, a) => sum + (Number(a.budget_estimated) || 0), 0)
 
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor("#8B5CF6")
-  doc.text("Summary", MARGIN, y)
-  y += 7
+  // Summary card background
+  const cardH = 26
+  doc.setFillColor("#F8F7FF")
+  doc.roundedRect(MARGIN, y, LANDSCAPE_CONTENT, cardH, 2, 2, "F")
+  doc.setDrawColor("#E9E5FF")
+  doc.roundedRect(MARGIN, y, LANDSCAPE_CONTENT, cardH, 2, 2, "S")
 
-  const stats = [
-    { label: "Total actions", val: String(total) },
-    { label: "Completed", val: `${done} (${pct}%)` },
-    { label: "Estimated budget", val: totalBudget > 0 ? `${totalBudget.toLocaleString()} EUR` : "-" },
-  ]
+  const innerY = y + 6
 
+  // Progress bar
+  const barX = MARGIN + 4
+  const barWidth = 80
+  const barHeight = 4
+  doc.setFillColor("#E5E7EB")
+  doc.roundedRect(barX, innerY, barWidth, barHeight, 2, 2, "F")
+  if (pct > 0) {
+    const fillColor = pct >= 80 ? "#22C55E" : pct >= 40 ? "#F59E0B" : "#3B82F6"
+    doc.setFillColor(fillColor)
+    doc.roundedRect(barX, innerY, Math.max(barWidth * (pct / 100), 4), barHeight, 2, 2, "F")
+  }
   doc.setFontSize(10)
-  stats.forEach((s) => {
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor("#1A1A2E")
+  doc.text(`${pct}%`, barX + barWidth + 4, innerY + 3.5)
+
+  // Status dots
+  const badges = [
+    { label: `${done} done`, color: "#22C55E" },
+    { label: `${inProgress} in progress`, color: "#3B82F6" },
+    { label: `${total - done - inProgress} remaining`, color: "#6B7280" },
+  ]
+  let bx = barX
+  const dotY = innerY + barHeight + 5
+  doc.setFontSize(7)
+  badges.forEach(({ label, color }) => {
+    doc.setFillColor(color)
+    doc.circle(bx + 1.2, dotY - 0.5, 1.2, "F")
     doc.setFont("helvetica", "normal")
-    doc.setTextColor("#888888")
-    doc.text(s.label, MARGIN, y)
-    doc.setFont("helvetica", "bold")
-    doc.setTextColor("#1A1A2E")
-    doc.text(s.val, MARGIN + 45, y)
-    y += 6
+    doc.setTextColor("#4A4A4A")
+    doc.text(label, bx + 4, dotY)
+    bx += doc.getTextWidth(label) + 10
   })
 
-  return y + 4
+  // Right: total + budget
+  const rightX = LANDSCAPE_WIDTH - MARGIN - 50
+  doc.setFontSize(22)
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor("#8B5CF6")
+  doc.text(String(total), rightX, innerY + 5)
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor("#888888")
+  doc.text("actions", rightX + doc.getTextWidth(String(total)) + 2, innerY + 5, { baseline: "alphabetic" })
+
+  if (totalBudget > 0) {
+    doc.setFontSize(8)
+    doc.setTextColor("#888888")
+    doc.text(`Budget: ${totalBudget.toLocaleString()} EUR`, rightX, innerY + 12)
+  }
+
+  return y + cardH + 6
 }
 
 function drawTableHeader(doc, y) {
@@ -169,14 +206,22 @@ function drawActionRow(doc, action, krStatuses, y) {
   doc.setTextColor("#4A4A4A")
   doc.text(sanitize(channelLabel), COL.channel, y)
 
+  // Status with color dot
   const statusCfg = ACTION_STATUSES[action.status]
-  doc.setTextColor(statusCfg?.colorHex || "#888888")
+  const statusColor = statusCfg?.colorHex || "#888888"
+  doc.setFillColor(statusColor)
+  doc.circle(COL.status + 1, y - 0.8, 1, "F")
+  doc.setTextColor(statusColor)
   doc.setFont("helvetica", "bold")
-  doc.text(sanitize(statusCfg?.label || action.status || "-"), COL.status, y)
+  doc.text(sanitize(statusCfg?.label || action.status || "-"), COL.status + 3.5, y)
 
+  // Priority with color dot
   const prioCfg = ACTION_PRIORITIES[action.priority]
-  doc.setTextColor(prioCfg?.colorHex || "#888888")
-  doc.text(sanitize(prioCfg?.label || action.priority || "-"), COL.priority, y)
+  const prioColor = prioCfg?.colorHex || "#888888"
+  doc.setFillColor(prioColor)
+  doc.circle(COL.priority + 1, y - 0.8, 1, "F")
+  doc.setTextColor(prioColor)
+  doc.text(sanitize(prioCfg?.label || action.priority || "-"), COL.priority + 3.5, y)
 
   doc.setFont("helvetica", "normal")
   doc.setTextColor("#4A4A4A")
@@ -206,6 +251,15 @@ function drawPhaseSection(doc, phase, phaseActions, krStatuses, y) {
   doc.setFontSize(10)
   doc.setTextColor("#FFFFFF")
   doc.text(sanitize(phase?.name || "Unassigned"), MARGIN + 4, y + 5.5)
+
+  // Action count badge on right
+  const countText = `${phaseActions.length} action${phaseActions.length !== 1 ? "s" : ""}`
+  doc.setFontSize(7.5)
+  doc.setFont("helvetica", "normal")
+  const countWidth = doc.getTextWidth(countText) + 6
+  doc.setFillColor("#FFFFFF40")
+  doc.roundedRect(MARGIN + LANDSCAPE_CONTENT - countWidth - 4, y + 1.5, countWidth, 5, 2, 2, "F")
+  doc.text(countText, MARGIN + LANDSCAPE_CONTENT - countWidth - 1, y + 5)
   y += 12
 
   y = drawTableHeader(doc, y)

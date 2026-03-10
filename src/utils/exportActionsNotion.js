@@ -21,16 +21,27 @@ function formatDate(dateStr) {
   }
 }
 
+const STATUS_EMOJI = { todo: "\u2B1C", in_progress: "\uD83D\uDD35", done: "\u2705", cancelled: "\u274C" }
+const PRIO_EMOJI = { low: "\u2B07\uFE0F", medium: "\u27A1\uFE0F", high: "\u26A0\uFE0F", critical: "\uD83D\uDD34" }
+
+function buildProgressBar(pct) {
+  const filled = Math.round(pct / 10)
+  return "\u2588".repeat(filled) + "\u2591".repeat(10 - filled)
+}
+
 export function generateActionsMarkdown({ actions, phases, krStatuses, setName }) {
   const total = actions.length
   const done = actions.filter((a) => a.status === "done").length
+  const inProgress = actions.filter((a) => a.status === "in_progress").length
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
   const totalBudget = actions.reduce((sum, a) => sum + (Number(a.budget_estimated) || 0), 0)
 
   const lines = [
     `# ${setName || "Action Plan"}`,
     "",
-    `**${total} actions** | ${done} completed (${pct}%)${totalBudget > 0 ? ` | Budget: ${totalBudget.toLocaleString()} EUR` : ""}`,
+    `> ${buildProgressBar(pct)} **${pct}%** complete`,
+    ">",
+    `> \u2705 ${done} done \u00B7 \uD83D\uDD35 ${inProgress} in progress \u00B7 \u2B1C ${total - done - inProgress} remaining${totalBudget > 0 ? ` \u00B7 \uD83D\uDCB0 ${totalBudget.toLocaleString()} EUR` : ""}`,
     "",
     "---",
     "",
@@ -51,20 +62,24 @@ export function generateActionsMarkdown({ actions, phases, krStatuses, setName }
     if (phaseActions.length === 0) continue
 
     const phaseName = phase?.name || "Unassigned"
+    const phaseDone = phaseActions.filter((a) => a.status === "done").length
+    const phasePct = Math.round((phaseDone / phaseActions.length) * 100)
     lines.push(`## ${phaseName}`)
+    lines.push(`*${phaseActions.length} actions \u00B7 ${phasePct}% complete*`)
     lines.push("")
-    lines.push("| Title | Channel | Status | Priority | Start | End | KRs |")
-    lines.push("|-------|---------|--------|----------|-------|-----|-----|")
+    lines.push("| | Title | Channel | Status | Priority | Dates | KRs |")
+    lines.push("|---|-------|---------|--------|----------|-------|-----|")
 
     phaseActions.forEach((action) => {
+      const emoji = STATUS_EMOJI[action.status] || "\u2B1C"
       const channel = ACTION_CHANNELS[action.channel]?.label || action.channel || "-"
       const status = ACTION_STATUSES[action.status]?.label || action.status || "-"
+      const prioEmoji = PRIO_EMOJI[action.priority] || ""
       const priority = ACTION_PRIORITIES[action.priority]?.label || action.priority || "-"
-      const start = formatDate(action.start_date)
-      const end = formatDate(action.end_date)
+      const dates = [formatDate(action.start_date), formatDate(action.end_date)].filter((d) => d !== "-").join(" \u2192 ") || "-"
       const krs = resolveKRLabels(action, krStatuses)
 
-      lines.push(`| ${action.title || "-"} | ${channel} | ${status} | ${priority} | ${start} | ${end} | ${krs} |`)
+      lines.push(`| ${emoji} | ${action.title || "-"} | ${channel} | ${status} | ${prioEmoji} ${priority} | ${dates} | ${krs} |`)
     })
 
     lines.push("")

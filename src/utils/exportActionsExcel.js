@@ -136,6 +136,24 @@ function buildActionsSheet(workbook, actions, phases, krStatuses, setName) {
       })
     })
 
+    // Color-code status cell (col 5)
+    const statusHex = ACTION_STATUSES[action.status]?.colorHex?.replace("#", "")
+    if (statusHex) {
+      ws.getCell(r, 5).font = font({ size: 10, bold: true, color: statusHex })
+    }
+
+    // Color-code priority cell (col 6)
+    const prioHex = ACTION_PRIORITIES[action.priority]?.colorHex?.replace("#", "")
+    if (prioHex) {
+      ws.getCell(r, 6).font = font({ size: 10, bold: true, color: prioHex })
+    }
+
+    // Color-code channel cell (col 3)
+    const channelHex = ACTION_CHANNELS[action.channel]?.colorHex?.replace("#", "")
+    if (channelHex) {
+      ws.getCell(r, 3).font = font({ size: 10, color: channelHex })
+    }
+
     // Alternate row coloring
     if (r % 2 === 0) {
       for (let c = 1; c <= 14; c++) {
@@ -151,6 +169,9 @@ function buildActionsSheet(workbook, actions, phases, krStatuses, setName) {
   widths.forEach((w, i) => {
     ws.getColumn(i + 1).width = w
   })
+
+  // Auto-filter on header row
+  ws.autoFilter = { from: { row: headerRow, column: 1 }, to: { row: headerRow, column: 14 } }
 
   // Freeze header
   ws.views = [{ state: "frozen", ySplit: headerRow }]
@@ -180,7 +201,8 @@ function buildSummarySheet(workbook, actions, phases, setName) {
 
   Object.entries(ACTION_STATUSES).forEach(([key, cfg]) => {
     const count = actions.filter((a) => a.status === key).length
-    setCell(ws, r, 1, cfg.label, { font: { size: 10 }, border: thinBorder() })
+    const hex = cfg.colorHex?.replace("#", "")
+    setCell(ws, r, 1, cfg.label, { font: { size: 10, bold: true, color: hex }, border: thinBorder() })
     setCell(ws, r, 2, count, { font: { size: 10, bold: true }, border: thinBorder() })
     r++
   })
