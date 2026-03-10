@@ -6,8 +6,8 @@
 ALTER TABLE public.action_templates
   ADD COLUMN IF NOT EXISTS relevant_kr_ids text[] DEFAULT '{}';
 
--- 2. Clear old seed data
-TRUNCATE public.action_templates;
+-- 2. Clear old seed data (CASCADE because actions may reference templates)
+TRUNCATE public.action_templates CASCADE;
 
 -- 3. Seed comprehensive action templates (~400) linked to specific KRs
 -- Each KR should have 20-30 suggested actions via overlap

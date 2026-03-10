@@ -27,6 +27,7 @@ ALTER TABLE public.action_templates ADD COLUMN IF NOT EXISTS estimated_days int 
 -- 4. RLS policies for action_phases (same pattern as actions)
 ALTER TABLE public.action_phases ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read phases of their sets" ON public.action_phases;
 CREATE POLICY "Users can read phases of their sets"
   ON public.action_phases FOR SELECT
   USING (
@@ -34,6 +35,7 @@ CREATE POLICY "Users can read phases of their sets"
     OR set_id IN (SELECT id FROM public.okr_sets WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Users can insert phases to their sets" ON public.action_phases;
 CREATE POLICY "Users can insert phases to their sets"
   ON public.action_phases FOR INSERT
   WITH CHECK (
@@ -41,6 +43,7 @@ CREATE POLICY "Users can insert phases to their sets"
     OR set_id IN (SELECT id FROM public.okr_sets WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Users can update phases of their sets" ON public.action_phases;
 CREATE POLICY "Users can update phases of their sets"
   ON public.action_phases FOR UPDATE
   USING (
@@ -48,6 +51,7 @@ CREATE POLICY "Users can update phases of their sets"
     OR set_id IN (SELECT id FROM public.okr_sets WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Users can delete phases of their sets" ON public.action_phases;
 CREATE POLICY "Users can delete phases of their sets"
   ON public.action_phases FOR DELETE
   USING (
