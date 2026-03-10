@@ -7,6 +7,7 @@ import { useKRSync } from "./hooks/useKRSync"
 import { useActions } from "./hooks/useActions"
 import { useTemplates } from "./hooks/useTemplates"
 import { usePhases } from "./hooks/usePhases"
+import { useDependencies } from "./hooks/useDependencies"
 import { generatePDF } from "./utils/exportPDF"
 import { generateExcel } from "./utils/exportExcel"
 import { copyNotionMarkdown } from "./utils/exportNotion"
@@ -37,6 +38,7 @@ export default function App({ onNavigate }) {
   const { actions, createAction, batchCreateActions, updateAction, deleteAction, actionsLoading } = useActions(activeSetId)
   const { templates } = useTemplates(state.selected)
   const { phases, ensureDefaultPhases } = usePhases(activeSetId)
+  const { dependencies, createDependency, deleteDependency } = useDependencies(activeSetId)
 
   const [setsLoading, setSetsLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -188,6 +190,9 @@ export default function App({ onNavigate }) {
           onCreateAction={createAction}
           onBatchCreateActions={batchCreateActions}
           onUpdateAction={updateAction}
+          dependencies={dependencies}
+          onCreateDependency={createDependency}
+          onDeleteDependency={deleteDependency}
           onDeleteAction={deleteAction}
           onBack={() => setStep(3)}
           onBackToSets={handleBackToSets}

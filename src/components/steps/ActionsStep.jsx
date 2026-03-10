@@ -18,6 +18,9 @@ export default function ActionsStep({
   templates,
   phases,
   ensureDefaultPhases,
+  dependencies,
+  onCreateDependency,
+  onDeleteDependency,
   onCreateAction,
   onBatchCreateActions,
   onUpdateAction,
@@ -212,6 +215,9 @@ export default function ActionsStep({
         <ActionsGanttView
           actions={actions}
           phases={phases}
+          dependencies={dependencies}
+          onCreateDependency={onCreateDependency}
+          onDeleteDependency={onDeleteDependency}
           onUpdateAction={handleInlineUpdate}
           onEdit={handleEdit}
         />

@@ -2,11 +2,11 @@ import { useMemo } from "react"
 import { computeSchedule } from "../../utils/computeSchedule"
 import GanttChart from "./gantt/GanttChart"
 
-export default function ActionsGanttView({ actions, phases, onUpdateAction, onEdit }) {
-  // Auto-schedule actions that don't have dates using phase order
+export default function ActionsGanttView({ actions, phases, dependencies, onCreateDependency, onDeleteDependency, onUpdateAction, onEdit }) {
+  // Auto-schedule actions that don't have dates using phase order + dependencies
   const scheduled = useMemo(
-    () => (phases?.length > 0 ? computeSchedule(phases, actions) : actions),
-    [phases, actions]
+    () => (phases?.length > 0 ? computeSchedule(phases, actions, undefined, dependencies) : actions),
+    [phases, actions, dependencies]
   )
 
   // Split into scheduled (have dates) and unscheduled
@@ -18,6 +18,9 @@ export default function ActionsGanttView({ actions, phases, onUpdateAction, onEd
       <GanttChart
         actions={withDates}
         phases={phases}
+        dependencies={dependencies}
+        onCreateDependency={onCreateDependency}
+        onDeleteDependency={onDeleteDependency}
         onUpdateAction={onUpdateAction}
         onEdit={onEdit}
       />
