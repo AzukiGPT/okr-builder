@@ -59,27 +59,27 @@ export default function KRRow({
       {onValuesChange ? (
         <input
           type="number"
-          value={currentValue || ""}
+          value={currentValue ?? ""}
           onChange={handleCurrentChange}
-          placeholder="Current"
+          placeholder="0"
           className="w-full px-1.5 py-1 border rounded text-xs font-mono text-center bg-background border-border text-foreground focus:outline-none focus:ring-1"
           style={{ "--tw-ring-color": colorHex }}
         />
       ) : (
-        <span className="text-xs font-mono text-center text-muted-foreground">{currentValue || "—"}</span>
+        <span className="text-xs font-mono text-center text-muted-foreground">{currentValue ?? "—"}</span>
       )}
       {/* Target value */}
       {onValuesChange ? (
         <input
           type="number"
-          value={targetValue || ""}
+          value={targetValue ?? ""}
           onChange={handleTargetChange}
-          placeholder="Target"
+          placeholder="0"
           className="w-full px-1.5 py-1 border rounded text-xs font-mono text-center bg-background border-border text-foreground focus:outline-none focus:ring-1"
           style={{ "--tw-ring-color": colorHex }}
         />
       ) : (
-        <span className="text-xs font-mono text-center text-muted-foreground">{targetValue || "—"}</span>
+        <span className="text-xs font-mono text-center text-muted-foreground">{targetValue ?? "—"}</span>
       )}
       {/* Status */}
       {onStatusChange ? (
