@@ -8,7 +8,10 @@ import ActionsGanttView from "../ui/actions-gantt-view"
 import ActionForm from "../ui/action-form"
 import TemplateSuggestions from "../ui/template-suggestions"
 import { Button } from "@/components/ui/button"
-import { Rocket, Sparkles, Zap, Loader2, Plus } from "lucide-react"
+import {
+  Rocket, Sparkles, Zap, Loader2, Plus,
+  FileSpreadsheet, FileText, Copy, Link2, Check,
+} from "lucide-react"
 
 export default function ActionsStep({
   selected,
@@ -35,6 +38,8 @@ export default function ActionsStep({
   const [groupBy, setGroupBy] = useState("status")
   const [showForm, setShowForm] = useState(false)
   const [editingAction, setEditingAction] = useState(null)
+  const [notionCopied, setNotionCopied] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
 
   useEffect(() => {
     if (ensureDefaultPhases) ensureDefaultPhases()
@@ -81,6 +86,20 @@ export default function ActionsStep({
     setEditingAction(action)
     setShowForm(false)
   }, [])
+
+  const handleCopyNotion = useCallback(async () => {
+    if (!onCopyNotion) return
+    await onCopyNotion()
+    setNotionCopied(true)
+    setTimeout(() => setNotionCopied(false), 2000)
+  }, [onCopyNotion])
+
+  const handleShareLink = useCallback(async () => {
+    if (!onShareLink) return
+    await onShareLink()
+    setShareCopied(true)
+    setTimeout(() => setShareCopied(false), 2000)
+  }, [onShareLink])
 
   // Resolve template's relevant_kr_ids (text like "S1.2") to set_key_results UUIDs
   const resolveKrUuids = useCallback((templateKrIds) => {
@@ -353,6 +372,78 @@ export default function ActionsStep({
           onSubmit={handleCreate}
           onCancel={() => setShowForm(false)}
         />
+      )}
+
+      {/* Export & Share */}
+      {totalActions > 0 && !showForm && !editingAction && (
+        <div className="rounded-xl border border-border bg-card p-5 space-y-4 glass-card">
+          <p className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">
+            Export &amp; Share
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <button
+              onClick={onExportExcel}
+              className="group flex flex-col items-center gap-2 rounded-lg border-2 border-transparent bg-emerald-50 hover:border-emerald-300 p-4 transition-all cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-full bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition-colors">
+                <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+              </div>
+              <span className="text-sm font-semibold text-emerald-700">Excel</span>
+              <span className="text-[10px] text-emerald-600/70 leading-tight text-center">
+                Full action plan with timeline &amp; budget
+              </span>
+            </button>
+
+            <button
+              onClick={onExportPDF}
+              className="group flex flex-col items-center gap-2 rounded-lg border-2 border-transparent bg-violet-50 hover:border-violet-300 p-4 transition-all cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-full bg-violet-100 group-hover:bg-violet-200 flex items-center justify-center transition-colors">
+                <FileText className="w-5 h-5 text-violet-600" />
+              </div>
+              <span className="text-sm font-semibold text-violet-700">PDF</span>
+              <span className="text-[10px] text-violet-600/70 leading-tight text-center">
+                One-page summary for leadership review
+              </span>
+            </button>
+
+            <button
+              onClick={handleCopyNotion}
+              className="group flex flex-col items-center gap-2 rounded-lg border-2 border-transparent bg-gray-50 hover:border-gray-300 p-4 transition-all cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
+                {notionCopied
+                  ? <Check className="w-5 h-5 text-emerald-600" />
+                  : <Copy className="w-5 h-5 text-gray-600" />
+                }
+              </div>
+              <span className="text-sm font-semibold text-gray-700">
+                {notionCopied ? "Copied!" : "Notion"}
+              </span>
+              <span className="text-[10px] text-gray-500 leading-tight text-center">
+                Markdown tables ready to paste
+              </span>
+            </button>
+
+            <button
+              onClick={handleShareLink}
+              className="group flex flex-col items-center gap-2 rounded-lg border-2 border-transparent bg-blue-50 hover:border-blue-300 p-4 transition-all cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center transition-colors">
+                {shareCopied
+                  ? <Check className="w-5 h-5 text-emerald-600" />
+                  : <Link2 className="w-5 h-5 text-blue-600" />
+                }
+              </div>
+              <span className="text-sm font-semibold text-blue-700">
+                {shareCopied ? "Copied!" : "Share link"}
+              </span>
+              <span className="text-[10px] text-blue-600/70 leading-tight text-center">
+                Shareable URL with your full config
+              </span>
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Template suggestions */}
