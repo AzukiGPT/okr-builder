@@ -1,18 +1,26 @@
 // src/components/ui/actions-kanban-view.jsx
-import { useCallback, useState } from "react"
+import { useCallback, useState, useMemo } from "react"
 import {
   DndContext,
   DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
-  closestCorners,
   useDroppable,
+  pointerWithin,
+  rectIntersection,
 } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { groupActions, getGroupFieldName } from "../../utils/groupActions"
 import ActionCard from "./action-card"
+
+// Custom collision detection: pointerWithin first (best for containers), then rectIntersection fallback
+function kanbanCollisionDetection(args) {
+  const pointerCollisions = pointerWithin(args)
+  if (pointerCollisions.length > 0) return pointerCollisions
+  return rectIntersection(args)
+}
 
 function SortableCard({ action, onEdit, onDelete, krStatuses, phases }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -23,6 +31,7 @@ function SortableCard({ action, onEdit, onDelete, krStatuses, phases }) {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : 1,
+    touchAction: "none",
   }
 
   return (
@@ -33,10 +42,11 @@ function SortableCard({ action, onEdit, onDelete, krStatuses, phases }) {
 }
 
 function KanbanColumn({ group, onEdit, onDelete, krStatuses, phases }) {
+  // Droppable covers the entire column (header + card area)
   const { setNodeRef, isOver } = useDroppable({ id: group.key })
 
   return (
-    <div className="flex-shrink-0 w-64 flex flex-col">
+    <div ref={setNodeRef} className="flex-shrink-0 w-64 flex flex-col">
       <div
         className="rounded-t-lg px-3 py-2 flex items-center justify-between"
         style={{ backgroundColor: `${group.colorHex}12` }}
@@ -49,7 +59,6 @@ function KanbanColumn({ group, onEdit, onDelete, krStatuses, phases }) {
         </span>
       </div>
       <div
-        ref={setNodeRef}
         className={`flex-1 rounded-b-lg border border-t-0 border-border p-2 space-y-2 min-h-[120px] transition-colors ${
           isOver ? "bg-primary/5 border-primary/30" : "bg-muted/20"
         }`}
@@ -97,12 +106,21 @@ export default function ActionsKanbanView({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
 
+  // Build a set of column keys for fast lookup
+  const groupKeySet = useMemo(
+    () => new Set(groups.map((g) => g.key)),
+    [groups]
+  )
+
   const findContainer = useCallback((id) => {
+    // Check if id is itself a column key
+    if (groupKeySet.has(id)) return id
+    // Otherwise find the column containing this action
     for (const group of groups) {
       if (group.actions.some((a) => a.id === id)) return group.key
     }
     return null
-  }, [groups])
+  }, [groups, groupKeySet])
 
   const handleDragStart = useCallback((event) => {
     setActiveId(event.active.id)
@@ -114,21 +132,12 @@ export default function ActionsKanbanView({
     if (!over || !fieldName) return
 
     const activeContainer = findContainer(active.id)
-
-    // Determine target container: could be an action id or a column droppable
-    let overContainer = findContainer(over.id)
-    if (!overContainer) {
-      // over.id might be the column key itself
-      const groupKeys = groups.map((g) => g.key)
-      if (groupKeys.includes(over.id)) {
-        overContainer = over.id
-      }
-    }
+    const overContainer = findContainer(over.id)
 
     if (!overContainer || activeContainer === overContainer) return
 
     onUpdateAction(active.id, { [fieldName]: overContainer })
-  }, [findContainer, groups, fieldName, onUpdateAction])
+  }, [findContainer, fieldName, onUpdateAction])
 
   const activeAction = activeId ? actions.find((a) => a.id === activeId) : null
 
@@ -143,7 +152,7 @@ export default function ActionsKanbanView({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={kanbanCollisionDetection}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
@@ -159,8 +168,10 @@ export default function ActionsKanbanView({
           />
         ))}
       </div>
-      <DragOverlay>
-        {activeAction ? <ActionCard action={activeAction} onEdit={() => {}} onDelete={() => {}} krStatuses={krStatuses} phases={phases} compact /> : null}
+      <DragOverlay dropAnimation={null}>
+        {activeAction ? (
+          <ActionCard action={activeAction} onEdit={() => {}} onDelete={() => {}} krStatuses={krStatuses} phases={phases} compact />
+        ) : null}
       </DragOverlay>
     </DndContext>
   )
