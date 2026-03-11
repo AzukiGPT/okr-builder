@@ -28,7 +28,8 @@ import MarketingAssetsPage from "./components/steps/MarketingAssetsPage"
 export default function App({ onNavigate }) {
   const {
     state, dispatch, setStep, setCtx, toggleObjective,
-    setFunnel, setCustomTarget, syncCtxToFunnel, reset
+    addCustomObjective, removeCustomObjective, addCustomKR, removeCustomKR,
+    setFunnel, setCustomTarget, syncCtxToFunnel, reset,
   } = useOKRState()
   const calc = useFunnelCalc(state.funnel)
   const { share, shared } = useShareableURL(state, dispatch)
@@ -137,6 +138,8 @@ export default function App({ onNavigate }) {
           ctx={state.ctx}
           selected={state.selected}
           toggleObjective={toggleObjective}
+          addCustomObjective={addCustomObjective}
+          removeCustomObjective={removeCustomObjective}
           onNext={() => handleSetStep(2)}
           onBack={() => handleSetStep(0)}
         />
@@ -164,6 +167,8 @@ export default function App({ onNavigate }) {
           onKRStatusChange={setKRStatus}
           onKRProgressChange={setKRProgress}
           onKRValuesChange={setKRValues}
+          addCustomKR={addCustomKR}
+          removeCustomKR={removeCustomKR}
           onBack={() => handleSetStep(2)}
           onReset={() => { reset(); handleSetStep(0) }}
           onExportPDF={() => generatePDF({

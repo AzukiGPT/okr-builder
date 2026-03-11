@@ -18,6 +18,7 @@ const VARIANT_STYLES = {
   medium: "bg-amber-50 text-amber-700 border-amber-200",
   high: "bg-red-50 text-red-600 border-red-200",
   critical: "bg-red-100 text-red-800 border-red-300",
+  custom: "bg-violet-50 text-violet-700 border-violet-200",
 }
 
 export default function Tag({ children, variant = "info" }) {

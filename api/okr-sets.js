@@ -253,6 +253,31 @@ async function syncObjectivesToNormalized(setId, selected, customTargets) {
           })
         }
       }
+
+      // Upsert custom KRs (IDs like "S1.c1" not covered by .1-.10 pattern)
+      const objCustomKRs = (selected.customKRs || {})[objId] || []
+      for (const ckr of objCustomKRs) {
+        const krId = ckr.id
+        // Skip IDs matching .{number} — already handled by standard loop
+        if (/\.\d+$/.test(krId)) continue
+
+        const existingCKR = existingKRMap.get(krId)
+        if (existingCKR) {
+          await supabaseAdmin
+            .from("set_key_results")
+            .update({
+              custom_target: customTargets[krId] || null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingCKR.id)
+        } else {
+          await supabaseAdmin.from("set_key_results").insert({
+            set_objective_id: setObjId,
+            kr_id: krId,
+            custom_target: customTargets[krId] || null,
+          })
+        }
+      }
     }
   }
 }

@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react"
 import { OBJECTIVES } from "../../data/objectives"
 import { TEAM_CONFIG, TEAMS } from "../../data/config"
 import KRRow from "../ui/kr-row"
@@ -11,6 +12,8 @@ import {
   FileText,
   Copy,
   Check,
+  Plus,
+  Trash2,
 } from "lucide-react"
 
 const SUMMARY_ITEMS = [
@@ -28,6 +31,25 @@ const NEXT_STEPS = [
   "Present to leadership for alignment before the quarter starts",
 ]
 
+function nextCustomKrId(objId, existingCustomKrs) {
+  const existing = existingCustomKrs || []
+  const isCustomObj = /^[SMC]C\d+$/.test(objId)
+
+  if (isCustomObj) {
+    const maxNum = existing.reduce((max, kr) => {
+      const match = kr.id.match(/\.(\d+)$/)
+      return match ? Math.max(max, parseInt(match[1])) : max
+    }, 0)
+    return `${objId}.${maxNum + 1}`
+  }
+
+  const maxNum = existing.reduce((max, kr) => {
+    const match = kr.id.match(/\.c(\d+)$/)
+    return match ? Math.max(max, parseInt(match[1])) : max
+  }, 0)
+  return `${objId}.c${maxNum + 1}`
+}
+
 export default function OKRSystemStep({
   ctx,
   selected,
@@ -39,6 +61,8 @@ export default function OKRSystemStep({
   onKRStatusChange,
   onKRProgressChange,
   onKRValuesChange,
+  addCustomKR,
+  removeCustomKR,
   onBack,
   onNext,
   onReset,
@@ -50,6 +74,13 @@ export default function OKRSystemStep({
   onShare,
   shared,
 }) {
+  const [addingKRForObj, setAddingKRForObj] = useState(null)
+  const [newKRText, setNewKRText] = useState("")
+  const [newKRType, setNewKRType] = useState("Lagging")
+
+  const customObjectives = selected.customObjectives || { sales: [], marketing: [], csm: [] }
+  const customKRsMap = selected.customKRs || {}
+
   const totalSelected = TEAMS.reduce(
     (sum, team) => sum + selected[team].length,
     0
@@ -66,6 +97,15 @@ export default function OKRSystemStep({
     const raw = calc[item.calcKey]
     return { ...item, val: typeof raw === "number" ? raw.toLocaleString() : raw }
   })
+
+  const handleAddKR = useCallback((objId) => {
+    if (!newKRText.trim()) return
+    const krId = nextCustomKrId(objId, customKRsMap[objId])
+    addCustomKR(objId, { id: krId, text: newKRText.trim(), type: newKRType })
+    setNewKRText("")
+    setNewKRType("Lagging")
+    setAddingKRForObj(null)
+  }, [newKRText, newKRType, customKRsMap, addCustomKR])
 
   return (
     <div className="space-y-6">
@@ -116,8 +156,14 @@ export default function OKRSystemStep({
         if (selected[team].length === 0) return null
 
         const cfg = TEAM_CONFIG[team]
-        const objectives = OBJECTIVES[team]
-        const selectedObjs = objectives.filter((obj) =>
+        const staticObjs = OBJECTIVES[team]
+        const teamCustomObjs = (customObjectives[team] || []).map((obj) => ({
+          ...obj,
+          krs: customKRsMap[obj.id] || [],
+          _isCustom: true,
+        }))
+        const allObjectives = [...staticObjs, ...teamCustomObjs]
+        const selectedObjs = allObjectives.filter((obj) =>
           selected[team].includes(obj.id)
         )
 
@@ -131,12 +177,21 @@ export default function OKRSystemStep({
             </div>
 
             {selectedObjs.map((obj) => {
-              const objKrProgress = obj.krs.reduce((sum, kr) => {
+              // Merge static KRs with custom KRs for static objectives
+              const additionalKrs = obj._isCustom ? [] : (customKRsMap[obj.id] || [])
+              const allKrs = [...(obj.krs || []), ...additionalKrs]
+
+              const objKrProgress = allKrs.reduce((sum, kr) => {
                 return sum + (krStatuses?.[kr.id]?.progress || 0)
               }, 0)
-              const objAvgProgress = obj.krs.length > 0
-                ? Math.round(objKrProgress / obj.krs.length)
+              const objAvgProgress = allKrs.length > 0
+                ? Math.round(objKrProgress / allKrs.length)
                 : 0
+
+              // Track which KR IDs are custom (for delete button)
+              const customKRIds = new Set(
+                (customKRsMap[obj.id] || []).map((kr) => kr.id)
+              )
 
               return (
               <div key={obj.id} className="space-y-0">
@@ -155,8 +210,11 @@ export default function OKRSystemStep({
                       <span className="font-bold text-sm text-foreground">
                         {obj.title}
                       </span>
+                      {obj._isCustom && (
+                        <Tag variant="custom">Custom</Tag>
+                      )}
                     </div>
-                    {krStatuses && (
+                    {krStatuses && allKrs.length > 0 && (
                       <div className="flex items-center gap-2">
                         <div className="w-20 h-2 rounded-full bg-gray-200 overflow-hidden">
                           <div
@@ -179,55 +237,129 @@ export default function OKRSystemStep({
                 </div>
 
                 <div className="border border-border rounded-b-lg overflow-x-auto glass-card">
-                  <div className="grid grid-cols-[32px_36px_1fr_80px_80px_100px_56px_72px] gap-1.5 px-4 py-2 bg-muted">
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground">
-                      #
-                    </span>
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground">
-                      ID
-                    </span>
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground">
-                      Key Result
-                    </span>
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
-                      Current
-                    </span>
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
-                      Target
-                    </span>
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
-                      Status
-                    </span>
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
-                      Progress
-                    </span>
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground text-right">
-                      Type
-                    </span>
-                  </div>
+                  {allKrs.length > 0 && (
+                    <div className="grid grid-cols-[32px_36px_1fr_80px_80px_100px_56px_72px] gap-1.5 px-4 py-2 bg-muted">
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground">
+                        #
+                      </span>
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground">
+                        ID
+                      </span>
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground">
+                        Key Result
+                      </span>
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
+                        Current
+                      </span>
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
+                        Target
+                      </span>
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
+                        Status
+                      </span>
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
+                        Progress
+                      </span>
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground text-right">
+                        Type
+                      </span>
+                    </div>
+                  )}
 
-                  {obj.krs.map((kr, ki) => (
-                    <KRRow
-                      key={kr.id}
-                      kr={kr}
-                      index={ki}
-                      teamConfig={cfg}
-                      suggestedTarget={
-                        kr.funnel
-                          ? calc.funnelTargets[kr.funnel]
-                          : "\u2192 set target"
-                      }
-                      customTarget={customTargets[kr.id]}
-                      onTargetChange={(krId, val) => setCustomTarget(krId, val)}
-                      krStatus={krStatuses?.[kr.id]?.status}
-                      krProgress={krStatuses?.[kr.id]?.progress}
-                      currentValue={krStatuses?.[kr.id]?.current_value}
-                      targetValue={krStatuses?.[kr.id]?.target_value}
-                      onStatusChange={onKRStatusChange}
-                      onProgressChange={onKRProgressChange}
-                      onValuesChange={onKRValuesChange}
-                    />
+                  {allKrs.map((kr, ki) => (
+                    <div key={kr.id} className="relative group">
+                      <KRRow
+                        kr={kr}
+                        index={ki}
+                        teamConfig={cfg}
+                        suggestedTarget={
+                          kr.funnel
+                            ? calc.funnelTargets[kr.funnel]
+                            : "\u2192 set target"
+                        }
+                        customTarget={customTargets[kr.id]}
+                        onTargetChange={(krId, val) => setCustomTarget(krId, val)}
+                        krStatus={krStatuses?.[kr.id]?.status}
+                        krProgress={krStatuses?.[kr.id]?.progress}
+                        currentValue={krStatuses?.[kr.id]?.current_value}
+                        targetValue={krStatuses?.[kr.id]?.target_value}
+                        onStatusChange={onKRStatusChange}
+                        onProgressChange={onKRProgressChange}
+                        onValuesChange={onKRValuesChange}
+                      />
+                      {customKRIds.has(kr.id) && removeCustomKR && (
+                        <button
+                          onClick={() => removeCustomKR(obj.id, kr.id)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                          title="Remove custom KR"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
                   ))}
+
+                  {allKrs.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      No KRs yet. Add your first KR below.
+                    </p>
+                  )}
+
+                  {/* Add custom KR form */}
+                  {addCustomKR && (
+                    <>
+                      {addingKRForObj === obj.id ? (
+                        <div className="flex items-center gap-2 px-4 py-2 border-t border-dashed border-border bg-muted/30">
+                          <input
+                            type="text"
+                            value={newKRText}
+                            onChange={(e) => setNewKRText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleAddKR(obj.id)
+                              if (e.key === "Escape") { setAddingKRForObj(null); setNewKRText("") }
+                            }}
+                            placeholder="Key result description..."
+                            className="flex-1 px-2.5 py-1.5 text-xs border rounded-md bg-background border-border text-foreground focus:outline-none focus:ring-1"
+                            style={{ "--tw-ring-color": cfg.colorHex }}
+                            autoFocus
+                          />
+                          <select
+                            value={newKRType}
+                            onChange={(e) => setNewKRType(e.target.value)}
+                            className="px-2 py-1.5 text-xs border rounded-md bg-background border-border text-foreground focus:outline-none focus:ring-1 cursor-pointer"
+                            style={{ "--tw-ring-color": cfg.colorHex }}
+                          >
+                            <option value="Lagging">Lagging</option>
+                            <option value="Leading">Leading</option>
+                          </select>
+                          <Button
+                            size="sm"
+                            onClick={() => handleAddKR(obj.id)}
+                            disabled={!newKRText.trim()}
+                            className="text-xs h-7"
+                          >
+                            Add
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => { setAddingKRForObj(null); setNewKRText("") }}
+                            className="text-xs h-7"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setAddingKRForObj(obj.id); setNewKRText(""); setNewKRType("Lagging") }}
+                          className="flex items-center gap-1.5 w-full px-4 py-2 text-xs text-muted-foreground hover:text-foreground border-t border-dashed border-border hover:bg-muted/30 transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Add KR
+                        </button>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
               )
