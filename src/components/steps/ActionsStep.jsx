@@ -60,6 +60,7 @@ export default function ActionsStep({
   const handleCreate = useCallback(async (payload) => {
     await onCreateAction(payload)
     setShowForm(false)
+    setEditingAction(null)
   }, [onCreateAction])
 
   const handleUpdate = useCallback(async (payload) => {
