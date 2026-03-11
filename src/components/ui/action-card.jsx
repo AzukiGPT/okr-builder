@@ -13,12 +13,12 @@ export default function ActionCard({ action, onEdit, onDelete, krStatuses, phase
   const hasDateInfo = action.start_date || action.end_date
   const hasBudget = action.budget_estimated > 0
 
-  // Resolve UUIDs to display KR IDs + team color
+  // Resolve UUIDs to display KR IDs + team color + progress
   const uuidToKrId = useMemo(() => {
     const map = {}
     if (krStatuses) {
       for (const [krId, data] of Object.entries(krStatuses)) {
-        if (data?.uuid) map[data.uuid] = { krId, team: data.team }
+        if (data?.uuid) map[data.uuid] = { krId, team: data.team, progress: data.progress || 0 }
       }
     }
     return map
@@ -42,10 +42,13 @@ export default function ActionCard({ action, onEdit, onDelete, krStatuses, phase
     return (
       <span
         key={uuid}
-        className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-full"
+        className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5"
         style={{ backgroundColor: `${teamColor}15`, color: teamColor }}
       >
         {kr.krId}
+        {kr.progress > 0 && (
+          <span className="opacity-70">{kr.progress}%</span>
+        )}
       </span>
     )
   }).filter(Boolean)

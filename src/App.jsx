@@ -39,7 +39,7 @@ export default function App({ onNavigate }) {
     loadSets, loadSet, createSet, setActiveSetId,
   } = useCloudSync(state, dispatch)
 
-  const { krStatuses, setKRStatus, setKRProgress } = useKRSync(activeSetId)
+  const { krStatuses, setKRStatus, setKRProgress, setKRValues } = useKRSync(activeSetId)
   const { actions, createAction, batchCreateActions, updateAction, deleteAction, actionsLoading } = useActions(activeSetId)
   const { templates } = useTemplates(state.selected)
   const { phases, ensureDefaultPhases } = usePhases(activeSetId)
@@ -163,6 +163,7 @@ export default function App({ onNavigate }) {
           krStatuses={krStatuses}
           onKRStatusChange={setKRStatus}
           onKRProgressChange={setKRProgress}
+          onKRValuesChange={setKRValues}
           onBack={() => handleSetStep(2)}
           onReset={() => { reset(); handleSetStep(0) }}
           onExportPDF={() => generatePDF({

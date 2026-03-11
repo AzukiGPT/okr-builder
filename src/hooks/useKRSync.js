@@ -24,6 +24,8 @@ export function useKRSync(activeSetId) {
         map[kr.kr_id] = {
           status: kr.status,
           progress: kr.progress,
+          current_value: kr.current_value ?? 0,
+          target_value: kr.target_value ?? 0,
           uuid: kr.uuid,
           team: kr.team,
         }
@@ -77,10 +79,22 @@ export function useKRSync(activeSetId) {
     scheduleSync(krId, { progress: clamped })
   }, [scheduleSync])
 
+  const setKRValues = useCallback((krId, currentValue, targetValue) => {
+    const current = Number(currentValue) || 0
+    const target = Number(targetValue) || 0
+    const progress = target > 0 ? Math.max(0, Math.min(100, Math.round((current / target) * 100))) : 0
+
+    setKRStatuses((prev) => ({
+      ...prev,
+      [krId]: { ...prev[krId], current_value: current, target_value: target, progress },
+    }))
+    scheduleSync(krId, { current_value: current, target_value: target })
+  }, [scheduleSync])
+
   // Cleanup timer on unmount
   useEffect(() => {
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   }, [])
 
-  return { krStatuses, setKRStatus, setKRProgress, krSyncStatus }
+  return { krStatuses, setKRStatus, setKRProgress, setKRValues, krSyncStatus }
 }

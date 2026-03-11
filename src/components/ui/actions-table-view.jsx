@@ -58,7 +58,7 @@ export default function ActionsTableView({ actions, onEdit, onDelete, onUpdateAc
     const map = {}
     if (krStatuses) {
       for (const [krId, data] of Object.entries(krStatuses)) {
-        if (data?.uuid) map[data.uuid] = { krId, team: data.team }
+        if (data?.uuid) map[data.uuid] = { krId, team: data.team, progress: data.progress || 0 }
       }
     }
     return map
@@ -147,10 +147,13 @@ export default function ActionsTableView({ actions, onEdit, onDelete, onUpdateAc
                       return (
                         <span
                           key={uuid}
-                          className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-full"
+                          className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5"
                           style={{ backgroundColor: `${teamColor}15`, color: teamColor }}
                         >
                           {kr.krId}
+                          {kr.progress > 0 && (
+                            <span className="opacity-70">{kr.progress}%</span>
+                          )}
                         </span>
                       )
                     })}

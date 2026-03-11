@@ -49,7 +49,7 @@ async function handleGet(req, user) {
 
   const { data, error } = await supabaseAdmin
     .from("set_key_results")
-    .select("id, kr_id, status, progress, custom_target, set_objective_id, set_objectives!inner(set_id, team)")
+    .select("id, kr_id, status, progress, custom_target, current_value, target_value, set_objective_id, set_objectives!inner(set_id, team)")
     .eq("set_objectives.set_id", setId)
 
   if (error) return json({ error: error.message }, 500, req)
@@ -60,6 +60,8 @@ async function handleGet(req, user) {
     status: kr.status,
     progress: kr.progress,
     custom_target: kr.custom_target,
+    current_value: kr.current_value ?? 0,
+    target_value: kr.target_value ?? 0,
     team: kr.set_objectives?.team,
   }))
 
@@ -76,14 +78,14 @@ async function handlePatch(req, user) {
   if (!access.allowed) return json({ error: "Forbidden" }, 403, req)
 
   const body = await req.json()
-  const { kr_id, status, progress } = body
+  const { kr_id, status, progress, current_value, target_value } = body
 
   if (!kr_id) return json({ error: "Missing kr_id" }, 400, req)
 
   // Resolve kr_id text to the correct row via join
   const { data: krRow } = await supabaseAdmin
     .from("set_key_results")
-    .select("id, set_objectives!inner(set_id)")
+    .select("id, current_value, target_value, set_objectives!inner(set_id)")
     .eq("kr_id", kr_id)
     .eq("set_objectives.set_id", setId)
     .maybeSingle()
@@ -92,13 +94,26 @@ async function handlePatch(req, user) {
 
   const updates = { updated_at: new Date().toISOString() }
   if (status !== undefined) updates.status = status
-  if (progress !== undefined) updates.progress = Math.max(0, Math.min(100, Number(progress)))
+
+  // Update current/target values if provided
+  const newCurrent = current_value !== undefined ? Number(current_value) || 0 : krRow.current_value ?? 0
+  const newTarget = target_value !== undefined ? Number(target_value) || 0 : krRow.target_value ?? 0
+
+  if (current_value !== undefined) updates.current_value = newCurrent
+  if (target_value !== undefined) updates.target_value = newTarget
+
+  // Auto-calculate progress from current/target if either was updated
+  if (current_value !== undefined || target_value !== undefined) {
+    updates.progress = newTarget > 0 ? Math.max(0, Math.min(100, Math.round((newCurrent / newTarget) * 100))) : 0
+  } else if (progress !== undefined) {
+    updates.progress = Math.max(0, Math.min(100, Number(progress)))
+  }
 
   const { data: updated, error } = await supabaseAdmin
     .from("set_key_results")
     .update(updates)
     .eq("id", krRow.id)
-    .select("id, kr_id, status, progress")
+    .select("id, kr_id, status, progress, current_value, target_value")
     .single()
 
   if (error) return json({ error: error.message }, 500, req)

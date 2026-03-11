@@ -38,6 +38,7 @@ export default function OKRSystemStep({
   krStatuses,
   onKRStatusChange,
   onKRProgressChange,
+  onKRValuesChange,
   onBack,
   onNext,
   onReset,
@@ -178,7 +179,7 @@ export default function OKRSystemStep({
                 </div>
 
                 <div className="border border-border rounded-b-lg overflow-x-auto glass-card">
-                  <div className="grid grid-cols-[40px_36px_1fr_140px_100px_56px_72px] gap-1 px-5 py-2 bg-muted">
+                  <div className="grid grid-cols-[32px_36px_1fr_80px_80px_100px_56px_72px] gap-1.5 px-4 py-2 bg-muted">
                     <span className="text-[10px] uppercase font-semibold text-muted-foreground">
                       #
                     </span>
@@ -189,13 +190,16 @@ export default function OKRSystemStep({
                       Key Result
                     </span>
                     <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
+                      Current
+                    </span>
+                    <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
                       Target
                     </span>
                     <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
                       Status
                     </span>
                     <span className="text-[10px] uppercase font-semibold text-muted-foreground text-center">
-                      %
+                      Progress
                     </span>
                     <span className="text-[10px] uppercase font-semibold text-muted-foreground text-right">
                       Type
@@ -217,8 +221,11 @@ export default function OKRSystemStep({
                       onTargetChange={(krId, val) => setCustomTarget(krId, val)}
                       krStatus={krStatuses?.[kr.id]?.status}
                       krProgress={krStatuses?.[kr.id]?.progress}
+                      currentValue={krStatuses?.[kr.id]?.current_value}
+                      targetValue={krStatuses?.[kr.id]?.target_value}
                       onStatusChange={onKRStatusChange}
                       onProgressChange={onKRProgressChange}
+                      onValuesChange={onKRValuesChange}
                     />
                   ))}
                 </div>
